@@ -42,15 +42,16 @@ const Login: React.FC = () => {
       arrivalDate: '2025-11-18',
       daysWaiting: 0, // Assuming it just arrived or is current
       status: 'Aguardando Recebimento',
-      actionLabel: 'Confirmar Recebimento',
-      role: 'Transportadora',
+      actionLabel: 'Ver Detalhes do Lote', // Set action label for the button
+      role: 'Transportadora', // This role will be used to determine the form type
       assignedToPublicKey: 'WORKER-WALLET-456', // Matches the mock user's public_key
+      // redirectToBatchDetails: true, // Removed as per user's clarification
     };
     setInjectedTask(injectedBatchData);
 
     setTimeout(() => {
       toast.success("Login como Operador Logístico realizado com sucesso!", { id: "login-toast" });
-      navigate('/tasks');
+      navigate('/tasks'); // Still navigate to tasks
     }, 1000);
   };
 
@@ -113,7 +114,6 @@ const Login: React.FC = () => {
                 onClick={handleBrandOwnerLogin}
               >
                 <span className="font-bold text-lg">Entrar como Dono da Marca</span>
-                {/* Removed subtitle */}
               </Button>
 
               <Button
@@ -123,7 +123,6 @@ const Login: React.FC = () => {
                 onClick={handleLogisticsPartnerLogin}
               >
                 <span className="font-bold text-lg">Entrar como Operador Logístico</span>
-                {/* Removed subtitle */}
               </Button>
             </div>
           </div>

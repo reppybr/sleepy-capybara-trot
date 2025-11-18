@@ -7,9 +7,10 @@ export interface InjectedTask {
   arrivalDate: string;
   daysWaiting: number;
   status: string;
-  actionLabel: string;
-  role: string;
+  actionLabel?: string; // Made optional as it might not be used for direct buttons
+  role: string; // e.g., 'Transportadora', 'Torrefador'
   assignedToPublicKey: string;
+  // redirectToBatchDetails?: boolean; // Removed as per user's clarification
 }
 
 interface InjectedTaskContextType {

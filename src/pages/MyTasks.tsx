@@ -7,12 +7,13 @@ import { Clock, Package, Factory, Truck, CheckCircle, XCircle, PlusCircle } from
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useInjectedTask } from '@/context/InjectedTaskContext'; // Import useInjectedTask
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Mock data for tasks
 const mockPendingTasks = [
   {
     id: 'task-001',
-    batchId: '#FSM-001',
+    batchId: 'FSM-001', // Changed to match expected format for navigation
     producer: 'Fazenda Santa Maria',
     arrivalDate: '2024-07-20',
     daysWaiting: 7,
@@ -23,7 +24,7 @@ const mockPendingTasks = [
   },
   {
     id: 'task-002',
-    batchId: '#FLA-002',
+    batchId: 'FLA-002', // Changed to match expected format for navigation
     producer: 'Finca La Aurora',
     arrivalDate: '2024-07-22',
     daysWaiting: 5,
@@ -34,7 +35,7 @@ const mockPendingTasks = [
   },
   {
     id: 'task-003',
-    batchId: '#FBB-003',
+    batchId: 'FBB-003', // Changed to match expected format for navigation
     producer: 'Fazenda Boa Vista',
     arrivalDate: '2024-07-25',
     daysWaiting: 2,
@@ -48,7 +49,7 @@ const mockPendingTasks = [
 const mockHistoryTasks = [
   {
     id: 'task-H01',
-    batchId: '#FSM-001',
+    batchId: 'FSM-001', // Changed to match expected format for navigation
     producer: 'Fazenda Santa Maria',
     completionDate: '2024-07-27',
     status: 'Torra Concluída',
@@ -57,7 +58,7 @@ const mockHistoryTasks = [
   },
   {
     id: 'task-H02',
-    batchId: '#FLA-001',
+    batchId: 'FLA-001', // Changed to match expected format for navigation
     producer: 'Finca La Aurora',
     completionDate: '2024-07-15',
     status: 'Transporte Finalizado',
@@ -72,6 +73,7 @@ interface TaskCardProps {
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const isUrgent = task.daysWaiting > 5;
+  const navigate = useNavigate(); // Use useNavigate hook
 
   const getStatusVariant = (status: string) => {
     if (status.includes('Torra')) return 'emandamento';
@@ -79,6 +81,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     if (status.includes('Recebimento')) return 'criado';
     if (status.includes('Concluída') || status.includes('Finalizado')) return 'concluido';
     return 'default';
+  };
+
+  const handleTaskAction = () => {
+    // Navigate to the batch details page
+    navigate(`/batches/${task.batchId}`);
   };
 
   return (
@@ -102,7 +109,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
           <Badge variant={getStatusVariant(task.status)}>{task.status}</Badge>
         </div>
       </div>
-      <Button variant="primary" className="w-full">
+      <Button variant="primary" className="w-full" onClick={handleTaskAction}>
         {task.actionLabel}
       </Button>
     </Card>
@@ -111,7 +118,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
 const MyTasks: React.FC = () => {
   const { user } = useAuth();
-  const { injectedTask } = useInjectedTask();
+  const { injectedTask } = useInjectedTask(); // No need for setInjectedTask here for clearing
+
+  // Removed the useEffect for automatic redirection
 
   const currentPendingTasks = React.useMemo(() => {
     if (!user) return [];
@@ -130,7 +139,7 @@ const MyTasks: React.FC = () => {
             arrivalDate: injectedTask.arrivalDate,
             daysWaiting: injectedTask.daysWaiting,
             status: injectedTask.status,
-            actionLabel: injectedTask.actionLabel,
+            actionLabel: injectedTask.actionLabel || 'Ver Detalhes', // Use default if actionLabel is undefined
             role: injectedTask.role,
             assignedToPublicKey: injectedTask.assignedToPublicKey,
           },
