@@ -139,10 +139,7 @@ const Dashboard: React.FC = () => {
           <h1 className="text-4xl font-bold text-primary-foreground">Visão Geral</h1>
           <p className="text-lg text-muted-foreground mt-1">Bem-vindo de volta. Aqui está o resumo da sua produção de café.</p>
         </div>
-        <Button variant="primary" className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Novo Lote</span>
-        </Button>
+        {/* Botão "Novo Lote" removido */}
       </div>
 
       {/* KPI Grid Section */}
