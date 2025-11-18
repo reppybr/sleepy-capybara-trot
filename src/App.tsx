@@ -7,7 +7,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Partners from "./pages/Partners";
 import MyTasks from "./pages/MyTasks";
-import MyBatches from "./pages/MyBatches"; // Import MyBatches
+import MyBatches from "./pages/MyBatches";
+import BatchDetails from "./pages/BatchDetails"; // Import BatchDetails
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
 
@@ -27,10 +28,11 @@ const App = () => (
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} /> {/* Default route is Dashboard */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/batches" element={<MyBatches />} /> {/* MyBatches page */}
+            <Route path="/batches" element={<MyBatches />} />
+            <Route path="/batches/:id" element={<BatchDetails />} /> {/* New BatchDetails page */}
             <Route path="/partners" element={<Partners />} />
             <Route path="/settings" element={<div>Configurações Página</div>} /> {/* Placeholder */}
-            <Route path="/tasks" element={<MyTasks />} /> {/* MyTasks page */}
+            <Route path="/tasks" element={<MyTasks />} />
           </Route>
 
           {/* Catch-all route for 404 */}
