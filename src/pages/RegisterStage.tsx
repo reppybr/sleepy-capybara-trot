@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
-import { getBatchById } from '../api/batchService'; // Changed to relative import
+import { getBatchById } from '@/api/batchService'; // Reverted to alias import
 import { DynamicStageForm } from '@/components/features/batch/DynamicStageForm';
 import { TransferCustodyForm } from '@/components/features/batch/TransferCustodyForm';
 import MiniTimelineStepper from '@/components/features/batch/MiniTimelineStepper'; // New component
