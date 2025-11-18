@@ -51,7 +51,7 @@ const mockBatches = [
     producer: "Fazenda União",
     created_at: "18/11/2024",
     current_custody: "João Silva", // Mock current user (Brand Owner) custody
-    custody_role: "Brand Owner",
+    custody_role: "Producer", // Changed to Producer to align with wizard logic
     status: "PROCESSING",
     is_finalized: false
   }
@@ -65,7 +65,7 @@ const MyBatches: React.FC = () => {
   const [isCreateBatchModalOpen, setIsCreateBatchModalOpen] = React.useState(false); // New state for modal
 
   // Mock current user's custody name for highlighting (Brand Owner)
-  const currentUserCustodyName = "João Silva"; // Changed to reflect the brand owner
+  const currentUserCustodyName = "João Silva"; // Still needed for highlighting logic
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -128,7 +128,7 @@ const MyBatches: React.FC = () => {
       producer: newBatchData.producerName,
       created_at: new Date().toLocaleDateString('pt-BR'),
       current_custody: "João Silva", // Assuming brand owner is always 'João Silva' for mock
-      custody_role: "Brand Owner",
+      custody_role: "Producer", // Consistent with the wizard's logic
       status: "CREATED",
       is_finalized: false
     };
@@ -226,7 +226,7 @@ const MyBatches: React.FC = () => {
                         </Avatar>
                         <div className={cn("text-indigo-300", { "font-bold text-amber-400": batch.current_custody === currentUserCustodyName })}>
                           {batch.current_custody}
-                          {batch.current_custody === currentUserCustodyName && <span className="ml-1 text-xs text-amber-500">(Você)</span>}
+                          {/* Removido: {batch.current_custody === currentUserCustodyName && <span className="ml-1 text-xs text-amber-500">(Você)</span>} */}
                         </div>
                       </div>
                     </TableCell>
