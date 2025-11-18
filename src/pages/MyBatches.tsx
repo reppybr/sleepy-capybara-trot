@@ -38,8 +38,18 @@ const mockBatches = [
     variety: "Geisha Premium",
     producer: "Fazenda Santa Clara",
     created_at: "17/11/2024",
-    current_custody: "Fazenda Santa Clara", // Mock current user's custody
+    current_custody: "Fazenda Santa Clara",
     custody_role: "Producer",
+    status: "PROCESSING",
+    is_finalized: false
+  },
+  {
+    id: "BTC-2024-093",
+    variety: "Arábica Blend",
+    producer: "Fazenda União",
+    created_at: "18/11/2024",
+    current_custody: "João Silva", // Mock current user (Brand Owner) custody
+    custody_role: "Brand Owner",
     status: "PROCESSING",
     is_finalized: false
   }
@@ -51,8 +61,8 @@ const MyBatches: React.FC = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('todos');
 
-  // Mock current user's custody name for highlighting
-  const currentUserCustodyName = "Fazenda Santa Clara";
+  // Mock current user's custody name for highlighting (Brand Owner)
+  const currentUserCustodyName = "João Silva"; // Changed to reflect the brand owner
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {

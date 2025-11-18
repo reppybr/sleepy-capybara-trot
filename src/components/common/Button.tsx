@@ -18,7 +18,7 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = "transition-all active:scale-95 duration-200 ease-in-out";
 
   const variantClasses = {
-    primary: "bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold hover:from-amber-600 hover:to-amber-700",
+    primary: "bg-gradient-to-r from-amber-500 to-amber-600 text-primary-foreground font-bold hover:from-amber-600 hover:to-amber-700", // Changed text-black to text-primary-foreground
     secondary: "border border-slate-600 text-slate-300 bg-transparent hover:bg-slate-700 hover:text-white",
     danger: "bg-red-600 text-white hover:bg-red-700",
     ghost: "hover:bg-slate-700 hover:text-white", // Default shadcn ghost
