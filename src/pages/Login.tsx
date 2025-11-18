@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, LogIn } from 'lucide-react'; // Removed Factory and Truck imports
+import { Coffee, LogIn } from 'lucide-react';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
@@ -109,10 +109,9 @@ const Login: React.FC = () => {
               <Button
                 variant="default" // Amber button
                 size="lg"
-                className="w-full flex flex-col items-center justify-center space-y-1 py-4 transform transition-transform duration-200 hover:scale-[1.02]"
+                className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]" // Changed space-y-1 to gap-1 and py-4 to py-3.5
                 onClick={handleBrandOwnerLogin}
               >
-                {/* <Factory className="h-5 w-5" /> */} {/* Removed Factory icon */}
                 <span className="font-bold text-lg">Entrar como Dono da Marca</span>
                 <span className="text-[0.7rem] text-primary-foreground/80 text-center px-2">Acesso total, Dashboard Financeiro, Criar Lotes.</span>
               </Button>
@@ -120,10 +119,9 @@ const Login: React.FC = () => {
               <Button
                 variant="secondary" // Blue/Slate button
                 size="lg"
-                className="w-full flex flex-col items-center justify-center space-y-1 py-4 transform transition-transform duration-200 hover:scale-[1.02]"
+                className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]" // Changed space-y-1 to gap-1 and py-4 to py-3.5
                 onClick={handleLogisticsPartnerLogin}
               >
-                {/* <Truck className="h-5 w-5" /> */} {/* Removed Truck icon */}
                 <span className="font-bold text-lg">Entrar como Operador Logístico</span>
                 <span className="text-[0.7rem] text-muted-foreground text-center px-2">Visão de tarefas, Lote pendente em custódia.</span>
               </Button>
