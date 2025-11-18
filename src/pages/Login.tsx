@@ -109,21 +109,21 @@ const Login: React.FC = () => {
               <Button
                 variant="default" // Amber button
                 size="lg"
-                className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]" // Changed space-y-1 to gap-1 and py-4 to py-3.5
+                className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]"
                 onClick={handleBrandOwnerLogin}
               >
                 <span className="font-bold text-lg">Entrar como Dono da Marca</span>
-                <span className="text-[0.7rem] text-primary-foreground/80 text-center px-2">Acesso total, Dashboard Financeiro, Criar Lotes.</span>
+                {/* Removed subtitle */}
               </Button>
 
               <Button
                 variant="secondary" // Blue/Slate button
                 size="lg"
-                className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]" // Changed space-y-1 to gap-1 and py-4 to py-3.5
+                className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]"
                 onClick={handleLogisticsPartnerLogin}
               >
                 <span className="font-bold text-lg">Entrar como Operador Logístico</span>
-                <span className="text-[0.7rem] text-muted-foreground text-center px-2">Visão de tarefas, Lote pendente em custódia.</span>
+                {/* Removed subtitle */}
               </Button>
             </div>
           </div>
