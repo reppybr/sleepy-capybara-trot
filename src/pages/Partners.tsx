@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, User, Building2, Mail, KeyRound, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils'; // Import cn utility
 
 // Mock data for partners
 const mockPartners = [
