@@ -1,6 +1,7 @@
 import React from 'react';
 import Card from '@/components/common/Card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import Badge from '@/components/common/Badge'; // Added missing import for Badge
 import { Package, User, Factory, ClipboardList, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Partner } from '@/hooks/use-partners';
