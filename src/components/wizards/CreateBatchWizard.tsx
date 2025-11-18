@@ -9,7 +9,7 @@ import { RefreshCw, PackagePlus, ChevronLeft, ChevronRight, Check, Factory, User
 import { generateBatchId } from '@/utils/batchIdGenerator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/context/AuthContext'; // Corrected import path
 import { usePartners, Partner } from '@/hooks/use-partners';
 import PartnerCard from './PartnerCard';
 import SummaryManifestCard from './SummaryManifestCard';
