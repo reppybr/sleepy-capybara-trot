@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import {
   Truck,
   ClipboardCheck,
-  Factory,
+  Factory, // Using Factory for roaster
   MapPin,
   CheckCircle,
   CircleDashed,
@@ -16,7 +16,6 @@ import {
   Circle,
   Leaf, // For producer
   Warehouse, // For warehouse
-  CoffeeRoaster, // For roaster
   Box, // For packager
   ShoppingBag, // For distributor
   Sparkles, // For end_consumer
@@ -51,8 +50,8 @@ const getIconForEventType = (type: TimelineEvent['type']) => {
       return Warehouse;
     case 'grader':
       return ClipboardCheck;
-    case 'roaster':
-      return CoffeeRoaster;
+    case 'roaster': // Changed to Factory
+      return Factory;
     case 'packager':
       return Box;
     case 'distributor':
