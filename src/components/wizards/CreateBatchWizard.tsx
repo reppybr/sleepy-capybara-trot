@@ -10,7 +10,8 @@ import { generateBatchId } from '@/utils/batchIdGenerator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext'; // Corrected import path
-import { usePartners, Partner } from '@/hooks/use-partners';
+import { usePartners, Partner, PartnerRole } from '@/hooks/use-partners'; // Import PartnerRole type
+import { roles } from '@/constants/stageFormSchemas'; // Import roles array
 import PartnerCard from './PartnerCard';
 import SummaryManifestCard from './SummaryManifestCard';
 
@@ -126,12 +127,12 @@ const CreateBatchWizard: React.FC<CreateBatchWizardProps> = ({ onClose, onSave }
   };
 
   // Filter partners for initial holder selection (only producers or brand owner)
-  const initialHolderPartners = allPartners.filter(p => p.role === 'Produtor');
+  const initialHolderPartners = allPartners.filter(p => p.role === 'producer');
   // Add brand owner to initial holder options if not already a partner
   const brandOwnerAsPartner: Partner = {
     id: brandOwner.id,
     name: brandOwner.name,
-    role: 'Produtor', // Assuming brand owner can also be an initial holder for their own batches
+    role: 'producer', // Assuming brand owner can also be an initial holder for their own batches
     email: brandOwner.email,
     public_key: brandOwner.public_key,
   };
@@ -143,7 +144,7 @@ const CreateBatchWizard: React.FC<CreateBatchWizardProps> = ({ onClose, onSave }
   // Filter partners for general participants list
   const filteredParticipants = allPartners.filter(p =>
     p.name.toLowerCase().includes(participantSearchTerm.toLowerCase()) ||
-    p.role.toLowerCase().includes(participantSearchTerm.toLowerCase())
+    roles.find(r => r.value === p.role)?.label.toLowerCase().includes(participantSearchTerm.toLowerCase()) // Search by label
   );
 
   // Ensure initialHolder is always in selectedParticipants when it's set

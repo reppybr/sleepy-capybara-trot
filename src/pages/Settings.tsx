@@ -13,6 +13,8 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Factory, Truck, Globe, Image, Mail, Phone, User, Lock, Wallet, Clock, Save, Bell } from 'lucide-react';
+import { roles } from '@/constants/stageFormSchemas'; // Import roles array
+import { PartnerRole } from '@/hooks/use-partners'; // Import PartnerRole type
 
 const Settings: React.FC = () => {
   const { user, logout } = useAuth();
@@ -26,7 +28,7 @@ const Settings: React.FC = () => {
 
   // Mock states for Worker/Partner
   const [companyName, setCompanyName] = useState(user?.role !== 'brand_owner' ? 'TransCafé Logística' : '');
-  const [serviceType, setServiceType] = useState(user?.role !== 'brand_owner' ? 'Transporte' : '');
+  const [serviceType, setServiceType] = useState<PartnerRole>(user?.role !== 'brand_owner' ? 'logistics' : '' as PartnerRole); // Use PartnerRole type
   const [operationalEmail, setOperationalEmail] = useState(user?.role !== 'brand_owner' ? 'ops@transcafe.com' : '');
   const [technicalResponsible, setTechnicalResponsible] = useState(user?.role !== 'brand_owner' ? 'Maria Oliveira' : '');
 
@@ -71,6 +73,9 @@ const Settings: React.FC = () => {
       </div>
     );
   }
+
+  // Filter roles relevant for a partner's service type (excluding brand_owner)
+  const partnerServiceRoles = roles.filter(role => role.value !== 'brand_owner');
 
   return (
     <div className="space-y-8 py-8">
@@ -177,15 +182,16 @@ const Settings: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
                     <Label htmlFor="serviceType" className="sm:text-right text-primary-foreground">Tipo de Serviço</Label>
-                    <Select onValueChange={setServiceType} value={serviceType}>
+                    <Select onValueChange={(value: PartnerRole) => setServiceType(value)} value={serviceType}>
                       <SelectTrigger className="sm:col-span-3 bg-slate-700 border-slate-600 text-primary-foreground">
                         <SelectValue placeholder="Selecione o Tipo de Serviço" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
-                        <SelectItem value="Transporte">Transporte</SelectItem>
-                        <SelectItem value="Armazenagem">Armazenagem</SelectItem>
-                        <SelectItem value="Torrefação">Torrefação</SelectItem>
-                        <SelectItem value="Distribuição">Distribuição</SelectItem>
+                        {partnerServiceRoles.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            {role.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

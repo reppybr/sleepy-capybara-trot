@@ -22,12 +22,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { roles } from '@/constants/stageFormSchemas'; // Import roles
+import { PartnerRole } from '@/hooks/use-partners'; // Import PartnerRole type
 
 // Mock data for partners
 const mockPartnersInitial = [
-  { id: 'p1', name: 'Café do Sol Ltda.', role: 'Produtor', email: 'contato@cafedosol.com', wallet: '0xabc...123' },
-  { id: 'p2', name: 'Logística Rápida S.A.', role: 'Transportadora', email: 'info@lograpida.com', wallet: '0xdef...456' },
-  { id: 'p3', name: 'Torrefação Aroma Fino', role: 'Torrefador', email: 'vendas@aromafino.com', wallet: '0xghi...789' },
+  { id: 'p1', name: 'Café do Sol Ltda.', role: 'producer' as PartnerRole, email: 'contato@cafedosol.com', wallet: '0xabc...123' },
+  { id: 'p2', name: 'Logística Rápida S.A.', role: 'logistics' as PartnerRole, email: 'info@lograpida.com', wallet: '0xdef...456' },
+  { id: 'p3', name: 'Torrefação Aroma Fino', role: 'roaster' as PartnerRole, email: 'vendas@aromafino.com', wallet: '0xghi...789' },
 ];
 
 const Partners: React.FC = () => {
@@ -38,7 +40,7 @@ const Partners: React.FC = () => {
   const [newPartner, setNewPartner] = React.useState({
     companyName: '',
     publicKey: '',
-    role: '',
+    role: '' as PartnerRole, // Initialize with PartnerRole type
     email: '',
   });
   const [addErrors, setAddErrors] = React.useState<{ [key: string]: boolean }>({});
@@ -52,10 +54,16 @@ const Partners: React.FC = () => {
     id: '',
     companyName: '',
     publicKey: '',
-    role: '',
+    role: '' as PartnerRole, // Initialize with PartnerRole type
     email: '',
   });
   const [editErrors, setEditErrors] = React.useState<{ [key: string]: boolean }>({});
+
+  // Helper to get role label from value
+  const getRoleLabel = (roleValue: PartnerRole) => {
+    const role = roles.find(r => r.value === roleValue);
+    return role ? role.label : roleValue;
+  };
 
   // --- Add Partner Logic ---
   const handleAddInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +72,7 @@ const Partners: React.FC = () => {
     setAddErrors((prev) => ({ ...prev, [id]: false }));
   };
 
-  const handleAddSelectChange = (value: string) => {
+  const handleAddSelectChange = (value: PartnerRole) => { // Use PartnerRole type
     setNewPartner((prev) => ({ ...prev, role: value }));
     setAddErrors((prev) => ({ ...prev, role: false }));
   };
@@ -99,7 +107,7 @@ const Partners: React.FC = () => {
     setPartners((prev) => [...prev, partnerToAdd]);
     toast.success("Parceiro adicionado com sucesso!");
     setIsAddModalOpen(false);
-    setNewPartner({ companyName: '', publicKey: '', role: '', email: '' });
+    setNewPartner({ companyName: '', publicKey: '', role: '' as PartnerRole, email: '' });
     setAddErrors({});
   };
 
@@ -137,7 +145,7 @@ const Partners: React.FC = () => {
     setEditErrors((prev) => ({ ...prev, [id]: false }));
   };
 
-  const handleEditSelectChange = (value: string) => {
+  const handleEditSelectChange = (value: PartnerRole) => { // Use PartnerRole type
     setEditedPartnerData((prev) => ({ ...prev, role: value }));
     setEditErrors((prev) => ({ ...prev, role: false }));
   };
@@ -175,7 +183,7 @@ const Partners: React.FC = () => {
     toast.success(`Parceiro "${editedPartnerData.companyName}" atualizado com sucesso!`);
     setIsEditModalOpen(false);
     setPartnerToEdit(null);
-    setEditedPartnerData({ id: '', companyName: '', publicKey: '', role: '', email: '' });
+    setEditedPartnerData({ id: '', companyName: '', publicKey: '', role: '' as PartnerRole, email: '' });
     setEditErrors({});
   };
 
@@ -204,7 +212,7 @@ const Partners: React.FC = () => {
                 </AvatarFallback>
               </Avatar>
               <h3 className="text-xl font-semibold text-primary-foreground">{partner.name}</h3>
-              <p className="text-muted-foreground">{partner.role}</p>
+              <p className="text-muted-foreground">{getRoleLabel(partner.role)}</p> {/* Display label */}
               <div className="flex space-x-2 mt-4">
                 <Button variant="secondary" size="sm" onClick={() => handleEditClick(partner)}>
                   <Edit className="h-4 w-4" />
@@ -240,7 +248,7 @@ const Partners: React.FC = () => {
                     className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors"
                   >
                     <TableCell className="font-medium text-primary-foreground">{partner.name}</TableCell>
-                    <TableCell className="text-slate-400">{partner.role}</TableCell>
+                    <TableCell className="text-slate-400">{getRoleLabel(partner.role)}</TableCell> {/* Display label */}
                     <TableCell className="text-slate-400">{partner.email}</TableCell>
                     <TableCell className="font-mono text-slate-300">{partner.wallet}</TableCell>
                     <TableCell className="text-right">
@@ -304,10 +312,11 @@ const Partners: React.FC = () => {
                     <SelectValue placeholder="Selecione o Papel" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
-                    <SelectItem value="Produtor">Produtor</SelectItem>
-                    <SelectItem value="Torrefador">Torrefador</SelectItem>
-                    <SelectItem value="Transportadora">Transportadora</SelectItem>
-                    <SelectItem value="Distribuidor">Distribuidor</SelectItem>
+                    {roles.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {addErrors.role && (
@@ -419,10 +428,11 @@ const Partners: React.FC = () => {
                     <SelectValue placeholder="Selecione o Papel" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
-                    <SelectItem value="Produtor">Produtor</SelectItem>
-                    <SelectItem value="Torrefador">Torrefador</SelectItem>
-                    <SelectItem value="Transportadora">Transportadora</SelectItem>
-                    <SelectItem value="Distribuidor">Distribuidor</SelectItem>
+                    {roles.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {editErrors.role && (
