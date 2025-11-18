@@ -39,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   const currentTitle = getSectionTitle(location.pathname);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background p-4 sm:p-6 lg:p-8 shadow-sm md:ml-64">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between bg-background p-4 sm:p-6 lg:p-8 shadow-sm">
       <div className="flex items-center">
         <Button
           variant="ghost"
