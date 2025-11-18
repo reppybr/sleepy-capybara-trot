@@ -6,20 +6,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, User, Building2, Mail, KeyRound, ExternalLink, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Plus, User, Building2, Mail, KeyRound, ExternalLink, Edit, Trash2 } from 'lucide-react'; // Removed MoreHorizontal
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -187,7 +179,7 @@ const Partners: React.FC = () => {
     setEditErrors({});
   };
 
-  const handleRowClick = (partnerName: string) => {
+  const handleViewProfileClick = (partnerName: string) => {
     toast.info(`Visualizando perfil de ${partnerName}`);
   };
 
@@ -215,10 +207,13 @@ const Partners: React.FC = () => {
               <p className="text-muted-foreground">{partner.role}</p>
               <div className="flex space-x-2 mt-4">
                 <Button variant="secondary" size="sm" onClick={() => handleEditClick(partner)}>
-                  <Edit className="h-4 w-4 mr-2" /> Editar
+                  <Edit className="h-4 w-4" />
                 </Button>
                 <Button variant="danger" size="sm" onClick={() => handleDeleteClick(partner)}>
-                  <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleViewProfileClick(partner.name)}>
+                  <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
             </Card>
@@ -249,27 +244,17 @@ const Partners: React.FC = () => {
                     <TableCell className="text-slate-400">{partner.email}</TableCell>
                     <TableCell className="font-mono text-slate-300">{partner.wallet}</TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Abrir menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700 text-primary-foreground">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuSeparator className="bg-slate-700" />
-                          <DropdownMenuItem onClick={() => handleRowClick(partner.name)} className="cursor-pointer hover:bg-slate-700">
-                            <ExternalLink className="mr-2 h-4 w-4" /> Ver Perfil
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditClick(partner)} className="cursor-pointer hover:bg-slate-700">
-                            <Edit className="mr-2 h-4 w-4" /> Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteClick(partner)} className="cursor-pointer text-red-400 hover:bg-red-900/20 hover:text-red-300">
-                            <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewProfileClick(partner.name)} className="text-amber-500 hover:bg-slate-700">
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(partner)} className="text-blue-400 hover:bg-slate-700">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(partner)} className="text-red-400 hover:bg-red-900/20">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
