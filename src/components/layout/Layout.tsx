@@ -1,13 +1,10 @@
 import React from 'react';
+import { Outlet } from 'react-router-dom'; // Import Outlet
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { MadeWithDyad } from '@/components/made-with-dyad'; // Ensure correct import path
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC = () => { // No need for LayoutProps with children anymore
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   const toggleSidebar = () => {
@@ -20,7 +17,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="flex flex-1 flex-col md:ml-64"> {/* Adjust margin for desktop sidebar */}
         <Header onMenuToggle={toggleSidebar} />
         <main className="flex-grow p-4 sm:p-6 lg:p-8">
-          {children}
+          <Outlet /> {/* Render nested routes here */}
         </main>
         <MadeWithDyad />
       </div>
