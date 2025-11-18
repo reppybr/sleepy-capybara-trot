@@ -10,11 +10,12 @@ import MyTasks from "./pages/MyTasks";
 import MyBatches from "./pages/MyBatches";
 import BatchDetails from "./pages/BatchDetails";
 import Settings from "./pages/Settings";
-import RegisterEnterprise from "./pages/RegisterEnterprise"; // Import the new RegisterEnterprise page
+import RegisterEnterprise from "./pages/RegisterEnterprise";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
 import { AuthProvider } from "./context/AuthContext";
 import { InjectedTaskProvider } from "./context/InjectedTaskContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute"; // Import ProtectedRoute
 
 const queryClient = new QueryClient();
 
@@ -27,19 +28,21 @@ const App = () => (
         <AuthProvider>
           <InjectedTaskProvider>
             <Routes>
-              {/* Login page does not use the main layout */}
+              {/* Login page does not use the main layout and is publicly accessible */}
               <Route path="/login" element={<Login />} />
 
-              {/* Routes that use the main layout */}
-              <Route element={<Layout />}>
-                <Route path="/" element={<Dashboard />} /> {/* Default route is Dashboard */}
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/batches" element={<MyBatches />} />
-                <Route path="/batches/:id" element={<BatchDetails />} />
-                <Route path="/partners" element={<Partners />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/register-enterprise" element={<RegisterEnterprise />} /> {/* New route for RegisterEnterprise */}
-                <Route path="/tasks" element={<MyTasks />} />
+              {/* Protected routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Dashboard />} /> {/* Default route is Dashboard */}
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/batches" element={<MyBatches />} />
+                  <Route path="/batches/:id" element={<BatchDetails />} />
+                  <Route path="/partners" element={<Partners />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/register-enterprise" element={<RegisterEnterprise />} />
+                  <Route path="/tasks" element={<MyTasks />} />
+                </Route>
               </Route>
 
               {/* Catch-all route for 404 */}
