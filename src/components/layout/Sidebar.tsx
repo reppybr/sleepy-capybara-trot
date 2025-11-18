@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Factory, // Certifique-se de que Factory está importado
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth from new context
 
@@ -42,6 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   // Links específicos para Parceiros/Funcionários
   const employeePartnerSpecificLinks = [
     { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' },
+    { label: 'Meu Perfil Corporativo', icon: Factory, path: '/register-enterprise' }, // Novo link para o perfil corporativo
   ];
 
   const settingsLink = { label: 'Configurações', icon: Settings, path: '/settings' };
