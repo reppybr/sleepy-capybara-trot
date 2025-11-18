@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/common/Button';
+import Button from '@/components/common/Button'; // Corrected import: changed from named import to default import
 import { RefreshCw, PackagePlus } from 'lucide-react';
 import { generateBatchId } from '@/utils/batchIdGenerator';
 import { cn } from '@/lib/utils';
