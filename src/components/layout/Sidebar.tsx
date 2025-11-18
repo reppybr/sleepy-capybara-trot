@@ -31,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   const brandOwnerSpecificLinks = [
     { label: 'Meus Lotes', icon: Package, path: '/batches' },
-    { label: 'Gerenciamento', icon: Factory, path: '/management' },
+    // Removed 'Gerenciamento' as per new requirements
   ];
 
   const employeePartnerSpecificLinks = [
