@@ -208,7 +208,7 @@ const MyBatches: React.FC = () => {
                       <Badge variant={getStatusBadgeVariant(batch.status)}>{getStatusLabel(batch.status)}</Badge>
                     </TableCell>
                     <TableCell className="py-4 px-6 text-right">
-                      <Button variant="ghost" onClick={() => handleViewDetails(batch.id)} className="text-amber-500 hover:bg-slate-700">
+                      <Button variant="ghost" onClick={() => handleViewDetails(batch.id)} className="hover:bg-slate-700"> {/* Removed text-amber-500 */}
                         Ver Detalhes <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </TableCell>

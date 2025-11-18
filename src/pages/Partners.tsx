@@ -245,7 +245,7 @@ const Partners: React.FC = () => {
                     <TableCell className="font-mono text-slate-300">{partner.wallet}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleViewProfileClick(partner.name)} className="text-amber-500 hover:bg-slate-700">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewProfileClick(partner.name)} className="hover:bg-slate-700"> {/* Removed text-amber-500 */}
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleEditClick(partner)} className="text-blue-400 hover:bg-slate-700">
