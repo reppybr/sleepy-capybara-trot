@@ -29,7 +29,7 @@ const mockPendingTasks = [
     arrivalDate: '2025-11-18',
     daysWaiting: 0,
     status: 'Aguardando Recebimento',
-    actionLabel: 'Ver Detalhes do Lote', // Correct action label
+    actionLabel: 'Registrar Minha Etapa', // Changed action label here
     role: 'Transportadora',
     assignedToPublicKey: 'WORKER-WALLET-456', // Matches the logistics partner's public key
   },
