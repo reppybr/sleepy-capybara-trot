@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, LogIn, Factory, Truck } from 'lucide-react';
+import { Coffee, LogIn } from 'lucide-react'; // Removed Factory and Truck imports
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
@@ -74,7 +74,7 @@ const Login: React.FC = () => {
           {/* Subtle gold/amber glow effect */}
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-500/20 to-transparent opacity-30 blur-3xl animate-pulse-slow"></div>
 
-          <div className="flex flex-col items-center space-y-8"> {/* Increased space-y from 6 to 8 */}
+          <div className="flex flex-col items-center space-y-8">
             <Coffee className="h-16 w-16 text-primary animate-bounce-slow" />
             <h1 className="text-4xl font-bold text-primary-foreground">Bem-vindo de volta</h1>
             <p className="text-lg text-muted-foreground">Conecte-se para gerenciar sua cadeia de suprimentos.</p>
@@ -100,7 +100,7 @@ const Login: React.FC = () => {
             </div>
 
             {/* Demo Mode Section */}
-            <div className="w-full space-y-6"> {/* Increased space-y from 4 to 6 */}
+            <div className="w-full space-y-6">
               <h2 className="text-xl font-bold text-primary-foreground flex items-center justify-center gap-2">
                 ⚡ Acesso Rápido (Modo Demo)
               </h2>
@@ -112,7 +112,7 @@ const Login: React.FC = () => {
                 className="w-full flex flex-col items-center justify-center space-y-1 py-4 transform transition-transform duration-200 hover:scale-[1.02]"
                 onClick={handleBrandOwnerLogin}
               >
-                <Factory className="h-5 w-5" />
+                {/* <Factory className="h-5 w-5" /> */} {/* Removed Factory icon */}
                 <span className="font-bold text-lg">Entrar como Dono da Marca</span>
                 <span className="text-[0.7rem] text-primary-foreground/80 text-center px-2">Acesso total, Dashboard Financeiro, Criar Lotes.</span>
               </Button>
@@ -123,7 +123,7 @@ const Login: React.FC = () => {
                 className="w-full flex flex-col items-center justify-center space-y-1 py-4 transform transition-transform duration-200 hover:scale-[1.02]"
                 onClick={handleLogisticsPartnerLogin}
               >
-                <Truck className="h-5 w-5" />
+                {/* <Truck className="h-5 w-5" /> */} {/* Removed Truck icon */}
                 <span className="font-bold text-lg">Entrar como Operador Logístico</span>
                 <span className="text-[0.7rem] text-muted-foreground text-center px-2">Visão de tarefas, Lote pendente em custódia.</span>
               </Button>
