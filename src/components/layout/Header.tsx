@@ -12,24 +12,25 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   const location = useLocation();
 
   // Mock user data
-  const userName = "John Doe";
+  const userName = "João Silva"; // Changed to Portuguese name
   const userInitials = userName.split(' ').map(n => n[0]).join('');
 
   // Determine current section title based on route
   const getSectionTitle = (pathname: string) => {
     switch (pathname) {
       case '/':
-        return 'Dashboard';
+      case '/dashboard':
+        return 'Visão Geral'; // Changed to Portuguese
       case '/batches':
-        return 'My Batches';
+        return 'Meus Lotes'; // Changed to Portuguese
       case '/partners':
-        return 'My Network';
+        return 'Minha Rede de Parceiros'; // Changed to Portuguese
       case '/settings':
-        return 'Settings';
+        return 'Configurações'; // Changed to Portuguese
       case '/management':
-        return 'Management';
+        return 'Gerenciamento'; // Changed to Portuguese
       case '/tasks':
-        return 'My Tasks';
+        return 'Minhas Tarefas'; // Changed to Portuguese
       default:
         return 'CoffeLedger';
     }

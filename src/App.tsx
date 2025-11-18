@@ -3,9 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard"; // Renamed from Index
+import Partners from "./pages/Partners";
 import NotFound from "./pages/NotFound";
-import Layout from "./components/layout/Layout"; // Import the new Layout component
+import Layout from "./components/layout/Layout";
 
 const queryClient = new QueryClient();
 
@@ -15,18 +17,24 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout> {/* Wrap routes with the new Layout component */}
-          <Routes>
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="/batches" element={<div>My Batches Page</div>} /> {/* Placeholder */}
-            <Route path="/partners" element={<div>My Network Page</div>} /> {/* Placeholder */}
-            <Route path="/settings" element={<div>Settings Page</div>} /> {/* Placeholder */}
-            <Route path="/management" element={<div>Management Page</div>} /> {/* Placeholder for brand_owner */}
-            <Route path="/tasks" element={<div>My Tasks Page</div>} /> {/* Placeholder for partners */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Login page does not use the main layout */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Routes that use the main layout */}
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} /> {/* Default route is Dashboard */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/batches" element={<div>Minhas Lotes Página</div>} /> {/* Placeholder */}
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/settings" element={<div>Configurações Página</div>} /> {/* Placeholder */}
+            <Route path="/management" element={<div>Gerenciamento Página</div>} /> {/* Placeholder for brand_owner */}
+            <Route path="/tasks" element={<div>Minhas Tarefas Página</div>} /> {/* Placeholder for partners */}
+          </Route>
+
+          {/* Catch-all route for 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

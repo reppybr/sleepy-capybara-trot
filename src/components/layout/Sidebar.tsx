@@ -25,9 +25,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const userRole = 'producer'; // Can be 'producer', 'brand_owner', 'logistics', etc.
 
   const commonLinks = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { label: 'My Batches', icon: Package, path: '/batches' },
-    { label: 'My Network', icon: Users, path: '/partners' },
+    { label: 'Visão Geral', icon: LayoutDashboard, path: '/' }, // Changed to Visão Geral
+    { label: 'Meus Lotes', icon: Package, path: '/batches' }, // Changed to Meus Lotes
+    { label: 'Minha Rede', icon: Users, path: '/partners' }, // Changed to Minha Rede
   ];
 
   const producerLinks = [
@@ -35,14 +35,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   ];
 
   const brandOwnerLinks = [
-    { label: 'Management', icon: Factory, path: '/management' },
+    { label: 'Gerenciamento', icon: Factory, path: '/management' }, // Changed to Gerenciamento
   ];
 
   const partnerLinks = [ // For roles like producer, logistics, etc.
-    { label: 'My Tasks', icon: ClipboardList, path: '/tasks' },
+    { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' }, // Changed to Minhas Tarefas
   ];
 
-  const settingsLink = { label: 'Settings', icon: Settings, path: '/settings' };
+  const settingsLink = { label: 'Configurações', icon: Settings, path: '/settings' }; // Changed to Configurações
 
   let navigationLinks = [...commonLinks];
 
