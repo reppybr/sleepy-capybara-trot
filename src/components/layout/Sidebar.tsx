@@ -28,30 +28,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     return null;
   }
 
+  // Links comuns a todos os usuários autenticados (exceto Dashboard)
   const commonLinks = [
-    { label: 'Visão Geral', icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Minha Rede', icon: Users, path: '/partners' },
   ];
 
+  // Links específicos para Donos da Marca
   const brandOwnerSpecificLinks = [
+    { label: 'Visão Geral', icon: LayoutDashboard, path: '/dashboard' }, // Dashboard agora é específico
     { label: 'Meus Lotes', icon: Package, path: '/batches' },
   ];
 
+  // Links específicos para Parceiros/Funcionários
   const employeePartnerSpecificLinks = [
     { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' },
   ];
 
   const settingsLink = { label: 'Configurações', icon: Settings, path: '/settings' };
 
-  let navigationLinks = [...commonLinks];
+  let navigationLinks = [...commonLinks]; // Começa com links comuns
 
   if (user.role === 'brand_owner') {
-    navigationLinks = [...navigationLinks, ...brandOwnerSpecificLinks];
+    navigationLinks = [...brandOwnerSpecificLinks, ...navigationLinks]; // Adiciona links de Brand Owner no início
   } else if (user.role === 'employee_partner') {
-    navigationLinks = [...navigationLinks, ...employeePartnerSpecificLinks];
+    navigationLinks = [...navigationLinks, ...employeePartnerSpecificLinks]; // Adiciona links de Employee Partner
   }
 
-  navigationLinks.push(settingsLink); // Settings is always available
+  navigationLinks.push(settingsLink); // Configurações é sempre disponível
 
   return (
     <aside
