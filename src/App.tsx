@@ -11,6 +11,7 @@ import MyBatches from "./pages/MyBatches";
 import BatchDetails from "./pages/BatchDetails";
 import Settings from "./pages/Settings";
 import RegisterEnterprise from "./pages/RegisterEnterprise";
+import RegisterStage from "./pages/RegisterStage"; // Import the new page
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
 import { AuthProvider } from "./context/AuthContext";
@@ -38,6 +39,7 @@ const App = () => (
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/batches" element={<MyBatches />} />
                   <Route path="/batches/:id" element={<BatchDetails />} />
+                  <Route path="/register-stage/:id" element={<RegisterStage />} /> {/* New route */}
                   <Route path="/partners" element={<Partners />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/register-enterprise" element={<RegisterEnterprise />} />

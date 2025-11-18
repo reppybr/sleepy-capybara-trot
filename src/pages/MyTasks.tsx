@@ -84,8 +84,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   };
 
   const handleTaskAction = () => {
-    // Navigate to the batch details page
-    navigate(`/batches/${task.batchId}`);
+    // Navigate to the new RegisterStage page for tasks requiring action
+    if (task.actionLabel === 'Registrar Minha Etapa' || task.actionLabel === 'Iniciar Torra' || task.actionLabel === 'Confirmar Recebimento') {
+      navigate(`/register-stage/${task.batchId}`);
+    } else {
+      // For 'Ver Detalhes' or other actions, navigate to BatchDetails
+      navigate(`/batches/${task.batchId}`);
+    }
   };
 
   return (
@@ -179,7 +184,7 @@ const MyTasks: React.FC = () => {
                       <Badge variant={task.status.includes('Concluída') || task.status.includes('Finalizado') ? 'concluido' : 'default'}>{task.status}</Badge>
                     </div>
                   </div>
-                  <Button variant="secondary" className="w-full">
+                  <Button variant="secondary" className="w-full" onClick={() => navigate(`/batches/${task.batchId}`)}>
                     {task.actionLabel}
                   </Button>
                 </Card>

@@ -1,10 +1,10 @@
-import React from 'react';
+"use client";
+
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
-import StatusBadge from '@/components/batches/StatusBadge';
-import Timeline, { TimelineEvent } from '@/components/batches/Timeline';
 import {
   QrCode,
   Edit,
@@ -21,57 +21,150 @@ import {
   Link as LinkIcon,
   ArrowLeft,
   Package,
+  Loader2,
+  CheckCircle,
+  UserPlus,
+  History,
+  Settings,
+  Users,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import { getBatchById, finalizeBatch } from '@/api/batchService'; // Import API functions
+import StageTimeline from '@/components/features/batch/StageTimeline'; // New component
+import AddParticipantsModal from '@/components/features/batch/AddParticipantsModal'; // New component
+import ParticipantsCard from '@/components/features/batch/ParticipantsCard'; // New component
+import StatusBadge from '@/components/batches/StatusBadge'; // Reusing existing StatusBadge
 
-// Mock data for a single batch
-const mockBatchDetails = {
-  id: "FSC-25-9X7K",
-  variety: "Catuaí Amarelo",
-  producerName: "Fazenda Santa Clara",
-  internalRefCode: "REF-SC-2025-001",
-  creationDate: "15/11/2025 10:00",
-  blockchainAddress: "0x1c3b7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c",
-  current_status: "IN_TRANSIT" as const, // Use 'as const' for literal type
-  current_custody: {
-    name: "Logística TransCafé Ltda",
-    role: "Transportadora",
-    email: "ops@transcafe.com.br",
-    since: "18/11/2025 08:30",
-    publicKey: "0xdef...456",
-  },
-  timeline: [
-    { id: 3, type: "movement", title: "Saída para Entrega", actor: "Logística TransCafé", timestamp: "18/11/2025 14:00", hash: "0x8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0987654321098765432109876543", status: "active" },
-    { id: 2, type: "verification", title: "Check-in no Armazém", actor: "Armazéns Gerais", timestamp: "17/11/2025 09:15", hash: "0x7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b", status: "completed" },
-    { id: 1, type: "creation", title: "Lote Criado (Origem)", actor: "Fazenda Santa Clara", timestamp: "15/11/2025 10:00", hash: "0x1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d", status: "completed" },
-    { id: 0, type: "predicted", title: "Entrega Final (Previsão)", actor: "Distribuidor Final", timestamp: "20/11/2025 10:00", status: "predicted" }, // Example of a predicted event
-  ] as TimelineEvent[],
-};
+// Helper function for icons (can be moved to utils if reused)
+function getFormIcon(partnerType: string) {
+  const icons: Record<string, React.ReactNode> = {
+    brand_owner: '👑',
+    producer: '🌱',
+    logistics: '🚚',
+    warehouse: '🏭',
+    grader: '🔍',
+    roaster: '🔥',
+    packager: '📦',
+    distributor: '🚛',
+    end_consumer: '💡',
+    sustainability: '🌿',
+    beneficiamento: '⚙️',
+  };
+  return icons[partnerType] || '📝';
+}
 
 const BatchDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
-  // In a real application, you would fetch batch details based on 'id'
-  const batch = mockBatchDetails; // Using mock data for now
+  const [batchData, setBatchData] = useState<any>(null); // Use 'any' for now, define specific type later
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isAddParticipantsModalOpen, setAddParticipantsModalOpen] = useState(false);
 
-  if (!batch) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground text-lg">Lote não encontrado.</p>
-      </div>
-    );
-  }
+  const refreshBatchData = async () => {
+    try {
+      const data = await getBatchById(id!);
+      setBatchData(data);
+    } catch (err: any) {
+      console.error('❌ Erro ao recarregar dados do lote:', err);
+      toast.error(err.message || 'Erro ao atualizar dados do lote');
+    }
+  };
 
-  const handleAction = (action: string) => {
-    toast.info(`Ação: ${action} para o lote ${batch.id}`);
-    // Implement specific logic for each action
+  useEffect(() => {
+    if (!id) {
+      setError("ID do lote não fornecido.");
+      setLoading(false);
+      return;
+    }
+
+    if (!isAuthenticated) {
+      // Redirect to login if not authenticated
+      navigate('/login');
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        const data = await getBatchById(id);
+        setBatchData(data);
+      } catch (err: any) {
+        setError(err.message || 'Lote não encontrado ou falha ao carregar.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, isAuthenticated, navigate]);
+
+  const userPublicKey = user?.public_key;
+  const userRole = user?.role;
+
+  const isBatchOwner = userPublicKey === batchData?.details?.brand_owner_key;
+  const isCurrentHolder = userPublicKey === batchData?.details?.current_holder_key;
+  const isFinalized = batchData?.details?.status === 'completed';
+
+  const canSeeManagement = isBatchOwner;
+  const canSeeTimeline = true;
+  const canSeeBatchInfo = true;
+
+  const handleFinalize = async () => {
+    if (!userPublicKey) {
+      toast.error("Você precisa estar conectado.");
+      return;
+    }
+
+    if (!isBatchOwner) {
+      toast.error("Apenas donos de marca podem finalizar lotes.");
+      return;
+    }
+
+    if (!window.confirm("Tem certeza que deseja finalizar este lote? Esta ação é irreversível.")) {
+      return;
+    }
+
+    toast.loading("Finalizando lote...", { id: "finalize-batch" });
+    try {
+      await finalizeBatch(id!, { brandOwnerKey: userPublicKey });
+      toast.success("Lote finalizado com sucesso!", { id: "finalize-batch" });
+      refreshBatchData();
+    } catch (error: any) {
+      toast.error(error.message || "Falha ao finalizar o lote.", { id: "finalize-batch" });
+      console.error("Error finalizing batch:", error);
+    }
   };
 
   const truncateHash = (hash: string) => {
     if (!hash) return '';
     return `${hash.substring(0, 6)}...${hash.substring(hash.length - 4)}`;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-primary-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3">Carregando detalhes do lote...</span>
+      </div>
+    );
+  }
+
+  if (error || !batchData?.details) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-red-500 text-lg">{error || 'Nenhum dado encontrado para este lote.'}</p>
+          <Button onClick={() => navigate('/batches')} className="mt-4">
+            Voltar para Meus Lotes
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 py-8">
@@ -81,18 +174,17 @@ const BatchDetails: React.FC = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-muted-foreground hover:bg-slate-700">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-mono text-amber-500">{batch.id}</h1>
-          <StatusBadge status={batch.current_status} className="hidden sm:block" />
+          <h1 className="text-3xl font-mono text-amber-500">{batchData.details.onchain_id}</h1>
+          <StatusBadge status={batchData.details.status === 'completed' ? 'FINALIZED' : 'PROCESSING'} className="hidden sm:block" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => handleAction("Registrar Evento")}>
-            Registrar Evento
-          </Button>
-          <Button variant="secondary" onClick={() => handleAction("Gerar QR Code Interno")}>
+          {canSeeManagement && !isFinalized && (
+            <Button variant="secondary" onClick={() => setAddParticipantsModalOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" /> Gerenciar Participantes
+            </Button>
+          )}
+          <Button variant="secondary" onClick={() => toast.info("Funcionalidade de QR Code em desenvolvimento.")}>
             <QrCode className="h-4 w-4 mr-2" /> Gerar QR Code Interno
-          </Button>
-          <Button variant="secondary" onClick={() => handleAction("Editar Dados")}>
-            <Edit className="h-4 w-4 mr-2" /> Editar Dados
           </Button>
         </div>
       </div>
@@ -107,23 +199,22 @@ const BatchDetails: React.FC = () => {
               <User className="h-5 w-5 text-blue-400" /> Custódia Atual (Responsável)
             </h2>
             <div className="space-y-3 text-muted-foreground">
-              <p className="text-lg font-medium text-primary-foreground">{batch.current_custody.name}</p>
-              <p className="flex items-center gap-2">
-                <Factory className="h-4 w-4 text-slate-500" /> Papel: {batch.current_custody.role}
+              <p className="text-lg font-medium text-primary-foreground">
+                {batchData.details.batch_participants?.find((p: any) => p.partner.public_key === batchData.details.current_holder_key)?.partner.name || 'Desconhecido'}
               </p>
               <p className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-slate-500" /> Email: {batch.current_custody.email}
+                <Factory className="h-4 w-4 text-slate-500" /> Papel: {batchData.details.batch_participants?.find((p: any) => p.partner.public_key === batchData.details.current_holder_key)?.partner.role || 'N/A'}
               </p>
               <p className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-slate-500" /> Desde: {batch.current_custody.since}
+                <Mail className="h-4 w-4 text-slate-500" /> Email: {batchData.details.batch_participants?.find((p: any) => p.partner.public_key === batchData.details.current_holder_key)?.partner.email || 'N/A'}
               </p>
               <p className="flex items-center gap-2">
-                <Hash className="h-4 w-4 text-slate-500" /> Chave Pública: <span className="font-mono text-sm">{truncateHash(batch.current_custody.publicKey)}</span>
+                <Clock className="h-4 w-4 text-slate-500" /> Desde: {batchData.details.batch_participants?.find((p: any) => p.partner.public_key === batchData.details.current_holder_key)?.joined_at || 'N/A'}
+              </p>
+              <p className="flex items-center gap-2">
+                <Hash className="h-4 w-4 text-slate-500" /> Chave Pública: <span className="font-mono text-sm">{truncateHash(batchData.details.current_holder_key)}</span>
               </p>
             </div>
-            <Button variant="primary" className="w-full mt-6" onClick={() => handleAction("Solicitar Transferência")}>
-              <Truck className="h-4 w-4 mr-2" /> Solicitar Transferência
-            </Button>
           </Card>
 
           {/* Dados Técnicos Card */}
@@ -133,34 +224,93 @@ const BatchDetails: React.FC = () => {
             </h2>
             <div className="space-y-3 text-muted-foreground">
               <p className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-slate-500" /> Data de Criação: <span className="text-primary-foreground">{batch.creationDate}</span>
+                <CalendarDays className="h-4 w-4 text-slate-500" /> Data de Criação: <span className="text-primary-foreground">{new Date(batchData.stages[0]?.timestamp).toLocaleDateString('pt-BR') || 'N/A'}</span>
               </p>
               <p className="flex items-center gap-2">
-                <Factory className="h-4 w-4 text-slate-500" /> Produtor: <span className="text-primary-foreground">{batch.producerName}</span>
+                <Factory className="h-4 w-4 text-slate-500" /> Produtor: <span className="text-primary-foreground">{batchData.details.producer_name}</span>
               </p>
               <p className="flex items-center gap-2">
-                <Coffee className="h-4 w-4 text-slate-500" /> Variedade: <span className="text-primary-foreground">{batch.variety}</span>
+                <Coffee className="h-4 w-4 text-slate-500" /> Variedade: <span className="text-primary-foreground">{batchData.stages[0]?.formData?.variety || 'N/A'}</span>
               </p>
               <p className="flex items-center gap-2">
-                <Hash className="h-4 w-4 text-slate-500" /> Ref. Interna: <span className="font-mono text-primary-foreground">{batch.internalRefCode}</span>
+                <Hash className="h-4 w-4 text-slate-500" /> Ref. Interna: <span className="font-mono text-primary-foreground">{batchData.stages[0]?.formData?.internalNote || 'N/A'}</span>
               </p>
               <p className="flex items-center gap-2">
-                <LinkIcon className="h-4 w-4 text-slate-500" /> Endereço Blockchain: <span className="font-mono text-primary-foreground">{truncateHash(batch.blockchainAddress)}</span>
+                <LinkIcon className="h-4 w-4 text-slate-500" /> Endereço Blockchain: <span className="font-mono text-primary-foreground">{truncateHash(batchData.stages[0]?.hash || 'N/A')}</span>
               </p>
             </div>
           </Card>
+
+          {/* ÁREA DE GESTÃO - APENAS BATCH OWNER */}
+          {canSeeManagement && (
+            <Card className="p-6 bg-slate-800/60 backdrop-blur-md">
+              <div className="flex items-center gap-3 mb-4">
+                <Settings className="h-6 w-6 text-blue-500" />
+                <h2 className="text-xl font-bold text-primary-foreground">Gestão do Lote</h2>
+                <span className="bg-blue-900/30 text-blue-400 text-xs px-2 py-1 rounded-full">
+                  👑 Dono da Marca
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {!isFinalized && (
+                  <Button
+                    onClick={handleFinalize}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Finalizar Lote
+                  </Button>
+                )}
+
+                <div className="flex items-center justify-between p-3 bg-slate-700 rounded">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className={`px-2 py-1 rounded text-sm ${
+                    isFinalized ? 'bg-green-900/30 text-green-400' : 'bg-amber-900/30 text-amber-400'
+                  }`}>
+                    {isFinalized ? 'Finalizado' : 'Ativo'}
+                  </span>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
 
-        {/* Column 2 & 3: Operational Timeline */}
-        <div className="lg:col-span-2">
-          <Card className="p-6 bg-slate-800/60 backdrop-blur-md">
-            <h2 className="text-xl font-semibold text-primary-foreground mb-6 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" /> Log de Eventos e Rastreabilidade
-            </h2>
-            <Timeline events={batch.timeline} />
-          </Card>
+        {/* Column 2 & 3: Operational Timeline & Work Area */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Timeline - VISÍVEL PARA TODOS */}
+          {canSeeTimeline && (
+            <Card className="p-6 bg-slate-800/60 backdrop-blur-md">
+              <h2 className="text-xl font-semibold text-primary-foreground mb-6 flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" /> Log de Eventos e Rastreabilidade
+              </h2>
+              <StageTimeline stages={batchData.stages || []} />
+            </Card>
+          )}
+
+          {/* Card de Participantes Expandido - APENAS BATCH OWNER */}
+          {canSeeManagement && batchData.details.batch_participants && (
+            <ParticipantsCard
+              batchId={batchData.details.id}
+              participants={batchData.details.batch_participants}
+              isOwner={isBatchOwner}
+              onParticipantRemoved={refreshBatchData}
+              batchData={batchData}
+            />
+          )}
         </div>
       </div>
+
+      {/* Modal de Adicionar Participantes - APENAS para batch owner */}
+      {canSeeManagement && (
+        <AddParticipantsModal
+          isOpen={isAddParticipantsModalOpen}
+          onClose={() => setAddParticipantsModalOpen(false)}
+          onSuccess={refreshBatchData}
+          batchId={id!}
+          currentParticipantIds={batchData.details.batch_participants?.map((p: any) => p.partner.id) || []}
+        />
+      )}
     </div>
   );
 };
