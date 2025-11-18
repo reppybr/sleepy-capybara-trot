@@ -11,7 +11,7 @@ import { PlusCircle, Search, PackageOpen, User, Sprout, ChevronRight } from 'luc
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Modal from '@/components/common/Modal'; // Import Modal
-import CreateBatchWizard from '@/components/batches/CreateBatchWizard'; // Import the new wizard
+import CreateBatchWizard from '@/components/wizards/CreateBatchWizard'; // Import the new wizard from 'wizards' directory
 
 // Mock data for batches
 const mockBatches = [
@@ -113,14 +113,21 @@ const MyBatches: React.FC = () => {
     setIsCreateBatchModalOpen(true); // Open the modal
   };
 
-  const handleSaveNewBatch = (newBatchData: { id: string; producerName: string; variety: string; }) => {
+  const handleSaveNewBatch = (newBatchData: {
+    id: string;
+    producerName: string;
+    variety: string;
+    internalNote?: string;
+    initialHolderPublicKey: string;
+    participantsPublicKeys: string[];
+  }) => {
     // Para agora, apenas adiciona aos dados mockados. Em uma aplicação real, seria uma chamada de API.
     const newMockBatch = {
       id: newBatchData.id,
       variety: newBatchData.variety,
       producer: newBatchData.producerName,
       created_at: new Date().toLocaleDateString('pt-BR'),
-      current_custody: currentUserCustodyName, // Assumindo que o dono da marca cria o lote
+      current_custody: "João Silva", // Assuming brand owner is always 'João Silva' for mock
       custody_role: "Brand Owner",
       status: "CREATED",
       is_finalized: false
