@@ -9,10 +9,11 @@ import Partners from "./pages/Partners";
 import MyTasks from "./pages/MyTasks";
 import MyBatches from "./pages/MyBatches";
 import BatchDetails from "./pages/BatchDetails";
+import Settings from "./pages/Settings"; // Import the new Settings page
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
-import { AuthProvider } from "./context/AuthContext"; // Import AuthProvider
-import { InjectedTaskProvider } from "./context/InjectedTaskContext"; // Import InjectedTaskProvider
+import { AuthProvider } from "./context/AuthContext";
+import { InjectedTaskProvider } from "./context/InjectedTaskContext";
 
 const queryClient = new QueryClient();
 
@@ -22,8 +23,8 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider> {/* Wrap with AuthProvider */}
-          <InjectedTaskProvider> {/* Wrap with InjectedTaskProvider */}
+        <AuthProvider>
+          <InjectedTaskProvider>
             <Routes>
               {/* Login page does not use the main layout */}
               <Route path="/login" element={<Login />} />
@@ -35,7 +36,7 @@ const App = () => (
                 <Route path="/batches" element={<MyBatches />} />
                 <Route path="/batches/:id" element={<BatchDetails />} />
                 <Route path="/partners" element={<Partners />} />
-                <Route path="/settings" element={<div>Configurações Página</div>} /> {/* Placeholder */}
+                <Route path="/settings" element={<Settings />} /> {/* Point to the new Settings component */}
                 <Route path="/tasks" element={<MyTasks />} />
               </Route>
 
