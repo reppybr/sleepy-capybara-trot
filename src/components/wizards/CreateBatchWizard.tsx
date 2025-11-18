@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
-import { RefreshCw, PackagePlus, ChevronLeft, ChevronRight, Check, Factory, Users, ClipboardList, Hash } from 'lucide-react';
+import { RefreshCw, PackagePlus, ChevronLeft, ChevronRight, Check, Factory, Users, ClipboardList, Hash, Search } from 'lucide-react'; // Added Search icon
 import { generateBatchId } from '@/utils/batchIdGenerator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
