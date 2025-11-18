@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate
 const mockPendingTasks = [
   {
     id: 'task-001',
-    batchId: 'FSM-001', // Changed to match expected format for navigation
+    batchId: 'FSM-001',
     producer: 'Fazenda Santa Maria',
     arrivalDate: '2024-07-20',
     daysWaiting: 7,
@@ -23,19 +23,19 @@ const mockPendingTasks = [
     assignedToPublicKey: '0xroasterkey123',
   },
   {
-    id: 'task-002',
-    batchId: 'FLA-002', // Changed to match expected format for navigation
-    producer: 'Finca La Aurora',
-    arrivalDate: '2024-07-22',
-    daysWaiting: 5,
-    status: 'Aguardando Transporte',
-    actionLabel: 'Registrar Transporte',
+    id: 'task-002', // This task is now explicitly for the logistics partner
+    batchId: 'FSC-25-9X7K', // Matches the ID in fetchBatchDetails
+    producer: 'Fazenda Santa Clara',
+    arrivalDate: '2025-11-18',
+    daysWaiting: 0,
+    status: 'Aguardando Recebimento',
+    actionLabel: 'Ver Detalhes do Lote', // Correct action label
     role: 'Transportadora',
-    assignedToPublicKey: '0xlogisticskey123',
+    assignedToPublicKey: 'WORKER-WALLET-456', // Matches the logistics partner's public key
   },
   {
     id: 'task-003',
-    batchId: 'FBB-003', // Changed to match expected format for navigation
+    batchId: 'FBB-003',
     producer: 'Fazenda Boa Vista',
     arrivalDate: '2024-07-25',
     daysWaiting: 2,
@@ -49,7 +49,7 @@ const mockPendingTasks = [
 const mockHistoryTasks = [
   {
     id: 'task-H01',
-    batchId: 'FSM-001', // Changed to match expected format for navigation
+    batchId: 'FSM-001',
     producer: 'Fazenda Santa Maria',
     completionDate: '2024-07-27',
     status: 'Torra Concluída',
@@ -58,7 +58,7 @@ const mockHistoryTasks = [
   },
   {
     id: 'task-H02',
-    batchId: 'FLA-001', // Changed to match expected format for navigation
+    batchId: 'FLA-001',
     producer: 'Finca La Aurora',
     completionDate: '2024-07-15',
     status: 'Transporte Finalizado',
@@ -124,31 +124,9 @@ const MyTasks: React.FC = () => {
 
   const currentPendingTasks = React.useMemo(() => {
     if (!user) return [];
-
-    let tasksForUser = mockPendingTasks.filter(task => task.assignedToPublicKey === user.public_key);
-
-    // If user is employee_partner and there's an injected task, add it
-    if (user.role === 'employee_partner' && injectedTask) {
-      // Ensure the injected task is not already present and is assigned to this user
-      if (!tasksForUser.some(task => task.id === injectedTask.id) && injectedTask.assignedToPublicKey === user.public_key) {
-        tasksForUser = [
-          {
-            id: injectedTask.id,
-            batchId: injectedTask.batchId,
-            producer: injectedTask.producer,
-            arrivalDate: injectedTask.arrivalDate,
-            daysWaiting: injectedTask.daysWaiting,
-            status: injectedTask.status,
-            actionLabel: injectedTask.actionLabel || 'Ver Detalhes', // Use default if actionLabel is undefined
-            role: injectedTask.role,
-            assignedToPublicKey: injectedTask.assignedToPublicKey,
-          },
-          ...tasksForUser
-        ];
-      }
-    }
-    return tasksForUser;
-  }, [user, injectedTask]);
+    // Filter tasks directly from mockPendingTasks based on user's public_key
+    return mockPendingTasks.filter(task => task.assignedToPublicKey === user.public_key);
+  }, [user]); // No longer depends on injectedTask
 
   const hasPendingTasks = currentPendingTasks.length > 0;
   const hasHistoryTasks = mockHistoryTasks.length > 0; // History tasks are not dynamic for now

@@ -33,22 +33,7 @@ const Login: React.FC = () => {
   const handleLogisticsPartnerLogin = () => {
     toast.loading("Entrando como Operador Logístico...", { id: "login-toast" });
     login('employee_partner');
-
-    // Inject mock batch data for the logistics partner
-    const injectedBatchData: InjectedTask = {
-      id: 'task-log-001',
-      batchId: 'FSC-25-9X7K',
-      producer: 'Fazenda Santa Clara',
-      arrivalDate: '2025-11-18',
-      daysWaiting: 0, // Assuming it just arrived or is current
-      status: 'Aguardando Recebimento',
-      actionLabel: 'Ver Detalhes do Lote', // Set action label for the button
-      role: 'Transportadora', // This role will be used to determine the form type
-      assignedToPublicKey: 'WORKER-WALLET-456', // Matches the mock user's public_key
-      // redirectToBatchDetails: true, // Removed as per user's clarification
-    };
-    setInjectedTask(injectedBatchData);
-
+    setInjectedTask(null); // Clear any injected task to rely on mockPendingTasks
     setTimeout(() => {
       toast.success("Login como Operador Logístico realizado com sucesso!", { id: "login-toast" });
       navigate('/tasks'); // Still navigate to tasks
