@@ -114,7 +114,7 @@ const Login: React.FC = () => {
               >
                 <Factory className="h-5 w-5" />
                 <span className="font-bold text-lg">Entrar como Dono da Marca</span>
-                <span className="text-xs text-primary-foreground/80 text-center">Acesso total, Dashboard Financeiro, Criar Lotes.</span>
+                <span className="text-[0.7rem] text-primary-foreground/80 text-center px-2">Acesso total, Dashboard Financeiro, Criar Lotes.</span>
               </Button>
 
               <Button
@@ -125,7 +125,7 @@ const Login: React.FC = () => {
               >
                 <Truck className="h-5 w-5" />
                 <span className="font-bold text-lg">Entrar como Operador Logístico</span>
-                <span className="text-xs text-muted-foreground text-center">Visão de tarefas, Lote pendente em custódia.</span>
+                <span className="text-[0.7rem] text-muted-foreground text-center px-2">Visão de tarefas, Lote pendente em custódia.</span>
               </Button>
             </div>
           </div>
