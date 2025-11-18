@@ -5,6 +5,8 @@ import Button from '@/components/common/Button';
 import Badge from '@/components/common/Badge';
 import { Clock, Package, Factory, Truck, CheckCircle, XCircle, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import { useInjectedTask } from '@/context/InjectedTaskContext'; // Import useInjectedTask
 
 // Mock data for tasks
 const mockPendingTasks = [
@@ -17,6 +19,7 @@ const mockPendingTasks = [
     status: 'Aguardando Torra',
     actionLabel: 'Iniciar Torra',
     role: 'Torrefador',
+    assignedToPublicKey: '0xroasterkey123',
   },
   {
     id: 'task-002',
@@ -27,6 +30,7 @@ const mockPendingTasks = [
     status: 'Aguardando Transporte',
     actionLabel: 'Registrar Transporte',
     role: 'Transportadora',
+    assignedToPublicKey: '0xlogisticskey123',
   },
   {
     id: 'task-003',
@@ -37,6 +41,7 @@ const mockPendingTasks = [
     status: 'Aguardando Recebimento',
     actionLabel: 'Confirmar Recebimento',
     role: 'Armazém',
+    assignedToPublicKey: '0xwarehousekey123',
   },
 ];
 
@@ -105,8 +110,39 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 };
 
 const MyTasks: React.FC = () => {
-  const hasPendingTasks = mockPendingTasks.length > 0;
-  const hasHistoryTasks = mockHistoryTasks.length > 0;
+  const { user } = useAuth();
+  const { injectedTask } = useInjectedTask();
+
+  const currentPendingTasks = React.useMemo(() => {
+    if (!user) return [];
+
+    let tasksForUser = mockPendingTasks.filter(task => task.assignedToPublicKey === user.public_key);
+
+    // If user is employee_partner and there's an injected task, add it
+    if (user.role === 'employee_partner' && injectedTask) {
+      // Ensure the injected task is not already present and is assigned to this user
+      if (!tasksForUser.some(task => task.id === injectedTask.id) && injectedTask.assignedToPublicKey === user.public_key) {
+        tasksForUser = [
+          {
+            id: injectedTask.id,
+            batchId: injectedTask.batchId,
+            producer: injectedTask.producer,
+            arrivalDate: injectedTask.arrivalDate,
+            daysWaiting: injectedTask.daysWaiting,
+            status: injectedTask.status,
+            actionLabel: injectedTask.actionLabel,
+            role: injectedTask.role,
+            assignedToPublicKey: injectedTask.assignedToPublicKey,
+          },
+          ...tasksForUser
+        ];
+      }
+    }
+    return tasksForUser;
+  }, [user, injectedTask]);
+
+  const hasPendingTasks = currentPendingTasks.length > 0;
+  const hasHistoryTasks = mockHistoryTasks.length > 0; // History tasks are not dynamic for now
 
   return (
     <div className="space-y-8 py-8">
@@ -125,7 +161,7 @@ const MyTasks: React.FC = () => {
         <TabsContent value="pendentes" className="mt-6">
           {hasPendingTasks ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockPendingTasks.map((task) => (
+              {currentPendingTasks.map((task) => (
                 <TaskCard key={task.id} task={task} />
               ))}
             </div>

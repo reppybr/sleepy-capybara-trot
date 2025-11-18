@@ -10,9 +10,9 @@ import {
   Coffee,
   ChevronLeft,
   ChevronRight,
-  Factory, // Example for brand_owner
-  ClipboardList, // Example for partner tasks
+  ClipboardList,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext'; // Import useAuth from new context
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,8 +21,12 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  // Mock user role for demonstration
-  const userRole = 'brand_owner'; // Can be 'brand_owner' or 'employee_partner'
+  const { user, isAuthenticated } = useAuth(); // Get user and isAuthenticated from context
+
+  // If not authenticated, don't render sidebar content
+  if (!isAuthenticated || !user) {
+    return null;
+  }
 
   const commonLinks = [
     { label: 'Visão Geral', icon: LayoutDashboard, path: '/dashboard' },
@@ -31,7 +35,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   const brandOwnerSpecificLinks = [
     { label: 'Meus Lotes', icon: Package, path: '/batches' },
-    // Removed 'Gerenciamento' as per new requirements
   ];
 
   const employeePartnerSpecificLinks = [
@@ -42,9 +45,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   let navigationLinks = [...commonLinks];
 
-  if (userRole === 'brand_owner') {
+  if (user.role === 'brand_owner') {
     navigationLinks = [...navigationLinks, ...brandOwnerSpecificLinks];
-  } else if (userRole === 'employee_partner') {
+  } else if (user.role === 'employee_partner') {
     navigationLinks = [...navigationLinks, ...employeePartnerSpecificLinks];
   }
 
