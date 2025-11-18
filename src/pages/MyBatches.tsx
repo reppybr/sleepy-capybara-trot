@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { PlusCircle, Search, PackageOpen, User, Sprout, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import Modal from '@/components/common/Modal'; // Import Modal
+import CreateBatchWizard from '@/components/batches/CreateBatchWizard'; // Import the new wizard
 
 // Mock data for batches
 const mockBatches = [
@@ -60,6 +62,7 @@ const MyBatches: React.FC = () => {
   const [batches, setBatches] = React.useState(mockBatches);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('todos');
+  const [isCreateBatchModalOpen, setIsCreateBatchModalOpen] = React.useState(false); // New state for modal
 
   // Mock current user's custody name for highlighting (Brand Owner)
   const currentUserCustodyName = "João Silva"; // Changed to reflect the brand owner
@@ -107,8 +110,24 @@ const MyBatches: React.FC = () => {
   });
 
   const handleCreateNewBatch = () => {
-    toast.info("Funcionalidade 'Criar Novo Lote' em desenvolvimento!");
-    // navigate('/batches/new');
+    setIsCreateBatchModalOpen(true); // Open the modal
+  };
+
+  const handleSaveNewBatch = (newBatchData: { id: string; producerName: string; variety: string; }) => {
+    // Para agora, apenas adiciona aos dados mockados. Em uma aplicação real, seria uma chamada de API.
+    const newMockBatch = {
+      id: newBatchData.id,
+      variety: newBatchData.variety,
+      producer: newBatchData.producerName,
+      created_at: new Date().toLocaleDateString('pt-BR'),
+      current_custody: currentUserCustodyName, // Assumindo que o dono da marca cria o lote
+      custody_role: "Brand Owner",
+      status: "CREATED",
+      is_finalized: false
+    };
+    setBatches((prev) => [newMockBatch, ...prev]);
+    toast.success(`Lote ${newBatchData.id} criado com sucesso!`);
+    setIsCreateBatchModalOpen(false);
   };
 
   const handleViewDetails = (batchId: string) => {
@@ -208,7 +227,7 @@ const MyBatches: React.FC = () => {
                       <Badge variant={getStatusBadgeVariant(batch.status)}>{getStatusLabel(batch.status)}</Badge>
                     </TableCell>
                     <TableCell className="py-4 px-6 text-right">
-                      <Button variant="ghost" onClick={() => handleViewDetails(batch.id)} className="hover:bg-slate-700"> {/* Removed text-amber-500 */}
+                      <Button variant="ghost" onClick={() => handleViewDetails(batch.id)} className="hover:bg-slate-700">
                         Ver Detalhes <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -231,6 +250,20 @@ const MyBatches: React.FC = () => {
           </Card>
         )}
       </section>
+
+      {/* Create Batch Modal */}
+      <Modal
+        open={isCreateBatchModalOpen}
+        onOpenChange={setIsCreateBatchModalOpen}
+        title="Criar Novo Lote de Café"
+        description="Preencha os detalhes para registrar um novo lote na cadeia de rastreabilidade."
+        className="sm:max-w-2xl"
+      >
+        <CreateBatchWizard
+          onClose={() => setIsCreateBatchModalOpen(false)}
+          onSave={handleSaveNewBatch}
+        />
+      </Modal>
     </div>
   );
 };
