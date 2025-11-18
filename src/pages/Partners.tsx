@@ -148,74 +148,111 @@ const Partners: React.FC = () => {
         onOpenChange={setIsModalOpen}
         title="Adicionar Novo Parceiro"
         description="Preencha os detalhes para adicionar um novo parceiro à sua rede."
+        className="sm:max-w-lg" // Make modal slightly wider for better layout
       >
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="companyName" className="text-right text-primary-foreground">
-              Empresa
-            </Label>
-            <Input
-              id="companyName"
-              value={newPartner.companyName}
-              onChange={handleInputChange}
-              className={cn("col-span-3 bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": errors.companyName })}
-              placeholder="Nome da Empresa"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="role" className="text-right text-primary-foreground">
-              Papel
-            </Label>
-            <Select onValueChange={handleSelectChange} value={newPartner.role}>
-              <SelectTrigger className={cn("col-span-3 bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": errors.role })}>
-                <SelectValue placeholder="Selecione o Papel" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
-                <SelectItem value="Produtor">Produtor</SelectItem>
-                <SelectItem value="Torrefador">Torrefador</SelectItem>
-                <SelectItem value="Transportadora">Transportadora</SelectItem>
-                <SelectItem value="Distribuidor">Distribuidor</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="grid gap-6 py-4"> {/* Increased gap for better spacing */}
+          {/* Section: Informações Gerais */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-primary-foreground flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" /> Informações da Empresa
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+              <Label htmlFor="companyName" className="sm:text-right text-primary-foreground">
+                Nome
+              </Label>
+              <div className="sm:col-span-3">
+                <Input
+                  id="companyName"
+                  value={newPartner.companyName}
+                  onChange={handleInputChange}
+                  className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": errors.companyName })}
+                  placeholder="Nome da Empresa"
+                />
+                {errors.companyName && (
+                  <p className="text-red-500 text-xs mt-1">Nome da empresa é obrigatório.</p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+              <Label htmlFor="role" className="sm:text-right text-primary-foreground">
+                Papel
+              </Label>
+              <div className="sm:col-span-3">
+                <Select onValueChange={handleSelectChange} value={newPartner.role}>
+                  <SelectTrigger className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": errors.role })}>
+                    <SelectValue placeholder="Selecione o Papel" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
+                    <SelectItem value="Produtor">Produtor</SelectItem>
+                    <SelectItem value="Torrefador">Torrefador</SelectItem>
+                    <SelectItem value="Transportadora">Transportadora</SelectItem>
+                    <SelectItem value="Distribuidor">Distribuidor</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.role && (
+                  <p className="text-red-500 text-xs mt-1">O papel é obrigatório.</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <Tabs defaultValue="publicKey" className="col-span-4" onValueChange={(value) => setAddMethod(value as 'publicKey' | 'email')}>
-            <TabsList className="grid w-full grid-cols-2 bg-card border border-border">
-              <TabsTrigger value="publicKey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Chave Pública</TabsTrigger>
-              <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Email</TabsTrigger>
-            </TabsList>
-            <TabsContent value="publicKey" className="mt-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="publicKey" className="text-right text-primary-foreground">
-                  Chave Pública
-                </Label>
-                <Input
-                  id="publicKey"
-                  value={newPartner.publicKey}
-                  onChange={handleInputChange}
-                  className={cn("col-span-3 bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": errors.publicKey })}
-                  placeholder="Chave Pública (Wallet)"
-                />
-              </div>
-            </TabsContent>
-            <TabsContent value="email" className="mt-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right text-primary-foreground">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newPartner.email}
-                  onChange={handleInputChange}
-                  className={cn("col-span-3 bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": errors.email })}
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+          {/* Section: Método de Adição */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-primary-foreground flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" /> Método de Adição
+            </h3>
+            <Tabs defaultValue="publicKey" className="w-full" onValueChange={(value) => setAddMethod(value as 'publicKey' | 'email')}>
+              <TabsList className="grid w-full grid-cols-2 bg-card border border-border">
+                <TabsTrigger value="publicKey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <KeyRound className="h-4 w-4 mr-2" /> Chave Pública
+                </TabsTrigger>
+                <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Mail className="h-4 w-4 mr-2" /> Email
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="publicKey" className="mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+                  <Label htmlFor="publicKey" className="sm:text-right text-primary-foreground">
+                    Chave Pública
+                  </Label>
+                  <div className="sm:col-span-3">
+                    <Input
+                      id="publicKey"
+                      value={newPartner.publicKey}
+                      onChange={handleInputChange}
+                      className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": errors.publicKey })}
+                      placeholder="Chave Pública (Wallet)"
+                    />
+                    {errors.publicKey && (
+                      <p className="text-red-500 text-xs mt-1">A chave pública é obrigatória.</p>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="email" className="mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+                  <Label htmlFor="email" className="sm:text-right text-primary-foreground">
+                    Email
+                  </Label>
+                  <div className="sm:col-span-3">
+                    <Input
+                      id="email"
+                      type="email"
+                      value={newPartner.email}
+                      onChange={handleInputChange}
+                      className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": errors.email })}
+                      placeholder="email@exemplo.com"
+                    />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs mt-1">O email é obrigatório.</p>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end mt-6"> {/* Added margin top for button */}
           <Button variant="primary" onClick={handleAddPartner}>
             Adicionar Parceiro
           </Button>
