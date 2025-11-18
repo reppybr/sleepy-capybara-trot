@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard"; // Renamed from Index
 import Partners from "./pages/Partners";
+import MyTasks from "./pages/MyTasks"; // Import MyTasks
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
 
@@ -29,7 +30,7 @@ const App = () => (
             <Route path="/partners" element={<Partners />} />
             <Route path="/settings" element={<div>Configurações Página</div>} /> {/* Placeholder */}
             <Route path="/management" element={<div>Gerenciamento Página</div>} /> {/* Placeholder for brand_owner */}
-            <Route path="/tasks" element={<div>Minhas Tarefas Página</div>} /> {/* Placeholder for partners */}
+            <Route path="/tasks" element={<MyTasks />} /> {/* New MyTasks page */}
           </Route>
 
           {/* Catch-all route for 404 */}

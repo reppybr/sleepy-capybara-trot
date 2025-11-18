@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, Wallet } from 'lucide-react';
+import { Coffee, LogIn } from 'lucide-react'; // Changed Wallet to LogIn
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
@@ -9,13 +9,13 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleConnectWallet = () => {
+  const handleLogin = () => {
     setIsLoading(true);
-    toast.loading("Conectando carteira...", { id: "wallet-connect" });
+    toast.loading("Entrando com Google...", { id: "google-login" });
 
     setTimeout(() => {
       setIsLoading(false);
-      toast.success("Carteira conectada com sucesso!", { id: "wallet-connect" });
+      toast.success("Login com Google realizado com sucesso!", { id: "google-login" });
       navigate('/dashboard');
     }, 1500); // Simulate 1.5 seconds loading
   };
@@ -32,10 +32,10 @@ const Login: React.FC = () => {
           <p className="text-lg text-muted-foreground">Rastreabilidade transparente para a cadeia do café</p>
 
           <Button
-            variant="primary"
+            variant="secondary" // Changed to secondary for a lighter button
             size="lg"
-            className="w-full flex items-center justify-center space-x-2 mt-8"
-            onClick={handleConnectWallet}
+            className="w-full flex items-center justify-center space-x-2 mt-8 bg-white text-black hover:bg-gray-100 border-gray-300" // Custom styling for Google button
+            onClick={handleLogin}
             disabled={isLoading}
           >
             {isLoading ? (
@@ -44,12 +44,12 @@ const Login: React.FC = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span>Conectando...</span>
+                <span>Entrando...</span>
               </span>
             ) : (
               <>
-                <Wallet className="h-5 w-5" />
-                <span>Conectar Carteira</span>
+                <LogIn className="h-5 w-5" /> {/* Changed icon */}
+                <span>Entrar com Google</span>
               </>
             )}
           </Button>

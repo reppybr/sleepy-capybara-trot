@@ -22,34 +22,30 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   // Mock user role for demonstration
-  const userRole = 'producer'; // Can be 'producer', 'brand_owner', 'logistics', etc.
+  const userRole = 'brand_owner'; // Can be 'brand_owner' or 'employee_partner'
 
   const commonLinks = [
-    { label: 'Visão Geral', icon: LayoutDashboard, path: '/' }, // Changed to Visão Geral
-    { label: 'Meus Lotes', icon: Package, path: '/batches' }, // Changed to Meus Lotes
-    { label: 'Minha Rede', icon: Users, path: '/partners' }, // Changed to Minha Rede
+    { label: 'Visão Geral', icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Minha Rede', icon: Users, path: '/partners' },
   ];
 
-  const producerLinks = [
-    // Specific links for producers
+  const brandOwnerSpecificLinks = [
+    { label: 'Meus Lotes', icon: Package, path: '/batches' },
+    { label: 'Gerenciamento', icon: Factory, path: '/management' },
   ];
 
-  const brandOwnerLinks = [
-    { label: 'Gerenciamento', icon: Factory, path: '/management' }, // Changed to Gerenciamento
+  const employeePartnerSpecificLinks = [
+    { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' },
   ];
 
-  const partnerLinks = [ // For roles like producer, logistics, etc.
-    { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' }, // Changed to Minhas Tarefas
-  ];
-
-  const settingsLink = { label: 'Configurações', icon: Settings, path: '/settings' }; // Changed to Configurações
+  const settingsLink = { label: 'Configurações', icon: Settings, path: '/settings' };
 
   let navigationLinks = [...commonLinks];
 
   if (userRole === 'brand_owner') {
-    navigationLinks = [...navigationLinks, ...brandOwnerLinks];
-  } else if (['producer', 'logistics'].includes(userRole)) { // Example partners
-    navigationLinks = [...navigationLinks, ...partnerLinks, ...producerLinks];
+    navigationLinks = [...navigationLinks, ...brandOwnerSpecificLinks];
+  } else if (userRole === 'employee_partner') {
+    navigationLinks = [...navigationLinks, ...employeePartnerSpecificLinks];
   }
 
   navigationLinks.push(settingsLink); // Settings is always available
@@ -81,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         <ul className="space-y-2">
           {navigationLinks.map((link) => {
             const Icon = link.icon;
-            const isActive = location.pathname === link.path;
+            const isActive = location.pathname === link.path || (link.path === '/dashboard' && location.pathname === '/');
             return (
               <li key={link.label}>
                 <Link
