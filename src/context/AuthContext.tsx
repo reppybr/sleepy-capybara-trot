@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-export type UserRole = 'brand_owner' | 'employee_partner';
+export type UserRole = 'brand_owner' | 'employee_partner' | 'producer'; // Added 'producer' to UserRole type
 
 export interface User {
   id: string;
@@ -49,12 +49,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         public_key: '0xbrandownerkey123'
       };
     } else if (role === 'employee_partner') {
+      // When logging in as 'employee_partner' in demo, we'll make them a 'producer' for testing the form
       newUser = {
-        id: 'user-logistics-1',
-        name: 'TransCafé Express',
-        email: 'ops@transcafe.com.br',
-        role: 'employee_partner',
-        public_key: 'WORKER-WALLET-456'
+        id: 'user-producer-demo-1', // New ID for this demo producer
+        name: 'Fazenda Esperança', // Name of a mock producer
+        email: 'contato@esperanca.com',
+        role: 'producer', // Changed role to producer
+        public_key: '0xesperancakey123' // Public key of a mock producer
       };
     }
     setUser(newUser);
