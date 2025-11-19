@@ -518,6 +518,7 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
           {
             "name": "distributorName",
             "label": "Nome da Empresa de Logística/Distribuidora",
+            autoFill: "distributorName" ,
             "type": "text",
             "placeholder": "Ex: Distribuidora Café Brasil Ltda.",
             "required": true
@@ -768,9 +769,9 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
             { "value": "black", "label": "Pretos" },
             { "value": "sour", "label": "Verdes / Ardidos" },
             { "value": "broken", "label": "Quebrados" },
-            { "value": "insect_damage", "label": "Dano por Inseto" },
-            { "value": "immature", "label": "Imaturos" },
-            { "value": "foreign_material", "label": "Material Estranho" }
+            { "value": "insect_damage", label: "Dano por Inseto" },
+            { "value": "immature", label: "Imaturos" },
+            { "value": "foreign_material", label: "Material Estranho" }
           ]
         },
         {
