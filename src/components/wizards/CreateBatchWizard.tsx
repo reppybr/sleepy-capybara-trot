@@ -9,7 +9,7 @@ import { RefreshCw, PackagePlus, ChevronLeft, ChevronRight, Check, Factory, User
 import { generateBatchId } from '@/utils/batchIdGenerator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext'; // Corrected import path
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { usePartners, Partner, PartnerRole } from '@/hooks/use-partners'; // Import PartnerRole type
 import { roles } from '@/constants/roles'; // Import roles array from new file
 import PartnerCard from './PartnerCard';
@@ -28,7 +28,7 @@ interface CreateBatchWizardProps {
 }
 
 const CreateBatchWizard: React.FC<CreateBatchWizardProps> = ({ onClose, onSave }) => {
-  const { user: brandOwner } = useAuth();
+  const { profile: brandOwner } = useSupabaseAuth();
   const { partners: allPartners, isLoading: partnersLoading } = usePartners();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -129,15 +129,17 @@ const CreateBatchWizard: React.FC<CreateBatchWizardProps> = ({ onClose, onSave }
   // Filter partners for initial holder selection (only producers or brand owner)
   const initialHolderPartners = allPartners.filter(p => p.role === 'producer');
   // Add brand owner to initial holder options if not already a partner
-  const brandOwnerAsPartner: Partner = {
-    id: brandOwner.id,
-    name: brandOwner.name,
-    role: 'producer', // Assuming brand owner can also be an initial holder for their own batches
-    email: brandOwner.email,
-    public_key: brandOwner.public_key,
-  };
-  if (!initialHolderPartners.some(p => p.id === brandOwnerAsPartner.id)) {
-    initialHolderPartners.unshift(brandOwnerAsPartner);
+  if (brandOwner) {
+    const brandOwnerAsPartner: Partner = {
+      id: brandOwner.auth_user_id,
+      name: brandOwner.name,
+      role: 'producer', // Assuming brand owner can also be an initial holder for their own batches
+      email: brandOwner.email,
+      public_key: brandOwner.public_key,
+    };
+    if (!initialHolderPartners.some(p => p.public_key === brandOwnerAsPartner.public_key)) {
+      initialHolderPartners.unshift(brandOwnerAsPartner);
+    }
   }
 
 

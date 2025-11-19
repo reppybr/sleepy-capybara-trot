@@ -9,22 +9,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Factory, Truck, Globe, Image, Mail, Phone, User, Lock, Wallet, Clock, Save, Bell } from 'lucide-react';
 import { roles } from '@/constants/roles'; // Import roles array from new file
 import { PartnerRole } from '@/hooks/use-partners'; // Import PartnerRole type
+import placeholderLogo from '@/assets/placeholder.svg';
 
 const Settings: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { profile: user, signOut: logout } = useSupabaseAuth();
   const [isSaving, setIsSaving] = useState(false);
 
   // Mock states for Brand Owner
   const [brandName, setBrandName] = useState(user?.role === 'brand_owner' ? 'Café do Futuro' : '');
   const [brandStory, setBrandStory] = useState(user?.role === 'brand_owner' ? 'Nossa fazenda cultiva cafés especiais com paixão e tradição, garantindo qualidade e sustentabilidade em cada grão.' : '');
   const [website, setWebsite] = useState(user?.role === 'brand_owner' ? 'https://www.cafedofuturo.com' : '');
-  const [logoUrl, setLogoUrl] = useState(user?.role === 'brand_owner' ? '/public/placeholder.svg' : '');
+  const [logoUrl, setLogoUrl] = useState(user?.role === 'brand_owner' ? placeholderLogo : '');
 
   // Mock states for Worker/Partner
   const [companyName, setCompanyName] = useState(user?.role !== 'brand_owner' ? 'TransCafé Logística' : '');

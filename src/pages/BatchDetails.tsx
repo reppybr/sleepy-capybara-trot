@@ -30,7 +30,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { getBatchById, finalizeBatch } from '@/api/batchService'; // Import API functions
 import StageTimeline from '@/components/features/batch/StageTimeline'; // New component
 import AddParticipantsModal from '@/components/features/batch/AddParticipantsModal'; // New component
@@ -58,7 +58,7 @@ function getFormIcon(partnerType: string) {
 const BatchDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { profile: user, session } = useSupabaseAuth();
 
   const [batchData, setBatchData] = useState<any>(null); // Use 'any' for now, define specific type later
   const [loading, setLoading] = useState(true);
@@ -82,7 +82,7 @@ const BatchDetails: React.FC = () => {
       return;
     }
 
-    if (!isAuthenticated) {
+    if (!session) {
       // Redirect to login if not authenticated
       navigate('/login');
       return;
@@ -100,7 +100,7 @@ const BatchDetails: React.FC = () => {
     };
 
     fetchData();
-  }, [id, isAuthenticated, navigate]);
+  }, [id, session, navigate]);
 
   const userPublicKey = user?.public_key;
   const userRole = user?.role;

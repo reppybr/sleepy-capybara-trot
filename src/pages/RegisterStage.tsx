@@ -15,7 +15,7 @@ import {
   History, // Added History icon for the sidebar title
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { getBatchById } from '@/api/batchService';
 import { DynamicStageForm } from '@/components/features/batch/DynamicStageForm';
 import { TransferCustodyForm } from '@/components/features/batch/TransferCustodyForm';
@@ -26,7 +26,7 @@ import { PartnerRoleKey } from '@/types/forms'; // Import PartnerRoleKey from ne
 const RegisterStage: React.FC = () => {
   const { id: batchId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { profile: user, session } = useSupabaseAuth();
 
   const [batchData, setBatchData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +59,7 @@ const RegisterStage: React.FC = () => {
       return;
     }
 
-    if (!isAuthenticated) {
+    if (!session) {
       navigate('/login');
       return;
     }
@@ -84,7 +84,7 @@ const RegisterStage: React.FC = () => {
     };
 
     fetchData();
-  }, [batchId, isAuthenticated, navigate, user?.public_key]);
+  }, [batchId, session, navigate, user?.public_key]);
 
   if (loading) {
     return (

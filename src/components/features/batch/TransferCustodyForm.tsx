@@ -5,7 +5,7 @@ import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
 import { Loader2, Send, Search } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { usePartners, Partner } from '@/hooks/use-partners';
 import { transferCustody } from '@/api/batchService'; // Import the API function
 import PartnerCard from '@/components/wizards/PartnerCard'; // Reusing PartnerCard
@@ -19,7 +19,7 @@ interface TransferCustodyFormProps {
 }
 
 export const TransferCustodyForm: React.FC<TransferCustodyFormProps> = ({ batch, currentHolderKey, onTransferSuccess }) => {
-  const { user } = useAuth();
+  const { profile: user } = useSupabaseAuth();
   const { partners: allPartners, isLoading: partnersLoading } = usePartners();
   const [selectedNextHolder, setSelectedNextHolder] = useState<Partner | null>(null);
   const [isTransferring, setIsTransferring] = useState(false);

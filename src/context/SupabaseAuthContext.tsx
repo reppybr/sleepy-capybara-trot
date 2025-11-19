@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { PartnerRoleKey } from '@/types/forms';
 
 // This is our custom user profile from the public.users table
 export interface UserProfile {
@@ -9,7 +10,7 @@ export interface UserProfile {
   name: string;
   email: string;
   public_key: string;
-  // We will need to add the role here later
+  role: PartnerRoleKey;
 }
 
 interface AuthContextType {

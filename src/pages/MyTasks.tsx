@@ -5,7 +5,7 @@ import Button from '@/components/common/Button';
 import Badge from '@/components/common/Badge';
 import { Clock, Package, Factory, Truck, CheckCircle, XCircle, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { useInjectedTask } from '@/context/InjectedTaskContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -141,8 +141,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 };
 
 const MyTasks: React.FC = () => {
-  const { user } = useAuth();
+  const { profile: user } = useSupabaseAuth();
   const { injectedTask } = useInjectedTask();
+  const navigate = useNavigate();
 
   const currentPendingTasks = React.useMemo(() => {
     if (!user) return [];

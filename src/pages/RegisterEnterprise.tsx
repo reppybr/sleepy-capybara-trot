@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MapPin, LocateFixed, X, Plus } from 'lucide-react';
@@ -41,19 +41,19 @@ const getInitialFormData = (schema: PartnerProfileSchema | undefined) => {
 
 const RegisterEnterprise: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { profile: user, session } = useSupabaseAuth();
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentProfileSchema, setCurrentProfileSchema] = useState<PartnerProfileSchema | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
+    if (!session || !user) {
       navigate('/login');
       return;
     }
 
-    const userRoleKey = user.role === 'employee_partner' ? 'producer' : user.role as PartnerRoleKey; // Assuming 'employee_partner' maps to 'producer' for this form, adjust as needed
+    const userRoleKey = user.role;
     const schema = PARTNER_PROFILES[userRoleKey];
     if (schema) {
       setCurrentProfileSchema(schema);
@@ -63,7 +63,7 @@ const RegisterEnterprise: React.FC = () => {
       toast.error("Esquema de perfil não encontrado para o seu papel.");
       navigate('/dashboard'); // Redirect if no schema
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [session, user, navigate]);
 
   const handleChange = (fieldName: string, value: any, groupName?: string) => {
     setFormData(prev => {

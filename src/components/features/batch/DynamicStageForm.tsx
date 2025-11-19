@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { Loader2, Save, X, CheckCircle } from 'lucide-react'; // Added CheckCircle icon
 import { STAGE_EVENT_SCHEMAS } from '@/constants/stageEventSchemas'; // Import STAGE_EVENT_SCHEMAS from new file
 import { FormField, PartnerRoleKey, FieldOption, PartnerProfileSchema } from '@/types/forms'; // Import types from new file
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { registerStage } from '@/api/batchService';
 import Badge from '@/components/common/Badge';
 import { getEnterpriseDataByPublicKey } from '@/api/mockEnterpriseData'; // Import mock enterprise data
@@ -47,7 +47,7 @@ const getInitialFormData = (schema: PartnerProfileSchema | undefined) => {
 };
 
 export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, partnerType, onStageAdded }) => {
-  const { user } = useAuth();
+  const { profile } = useSupabaseAuth();
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,8 +61,8 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       let newFormData = { ...initialData };
       const newAutoFilledFields = new Set<string>();
 
-      if (user?.public_key) {
-        const enterpriseProfile = getEnterpriseDataByPublicKey(user.public_key);
+      if (profile?.public_key) {
+        const enterpriseProfile = getEnterpriseDataByPublicKey(profile.public_key);
         if (enterpriseProfile && enterpriseProfile.profile_metadata) {
           const profileData = enterpriseProfile.profile_metadata;
 
@@ -86,7 +86,7 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       setFormData(newFormData);
       setAutoFilledFields(newAutoFilledFields);
     }
-  }, [stageSchema, user?.public_key]);
+  }, [stageSchema, profile?.public_key]);
 
   const handleChange = (fieldName: string, value: any, groupName?: string) => {
     setFormData(prev => {
@@ -177,7 +177,7 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       return;
     }
 
-    if (!user) {
+    if (!profile) {
       toast.error("Usuário não autenticado.");
       return;
     }
@@ -189,8 +189,8 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       const response = await registerStage(
         batchId,
         formData,
-        user.public_key,
-        user.name,
+        profile.public_key,
+        profile.name,
         partnerType, // Use partnerType as stage type
         stageSchema?.title || 'Etapa Registrada' // Use schema title as stage title
       );

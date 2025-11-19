@@ -6,7 +6,7 @@ import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import coffeeImage from '/public/placeholder.svg';
+import coffeeImage from '@/assets/placeholder.svg';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
