@@ -37,7 +37,7 @@ export const mockEnterpriseData: { [publicKey: string]: { role: PartnerRoleKey; 
       altitude: 950,
       shadeConsortium: "Cultivo sombreado com árvores frutíferas.",
       producerStory: "Produtores de café especial desde 1950.",
-      certifications: ["organic"],
+      certifications: ["organic", "fair_trade"],
     },
   },
   '0xvelozkey789': { // Transportadora Veloz (Logistics)
@@ -54,6 +54,18 @@ export const mockEnterpriseData: { [publicKey: string]: { role: PartnerRoleKey; 
       driverName: "João da Silva",
       operationalEmail: 'contato@veloz.com',
       technicalResponsible: 'João da Silva',
+    },
+  },
+  '0xesperancakey123': { // Fazenda Esperança (Producer)
+    role: 'producer',
+    profile_metadata: {
+      farmName: "Fazenda Esperança",
+      address: "Estrada do Café, Km 10, Serra Negra, SP",
+      coordinates: { lat: -22.6, lng: -46.7 },
+      altitude: 1100,
+      shadeConsortium: "Cultivo em consórcio com eucaliptos.",
+      producerStory: "Tradição e inovação na produção de cafés finos.",
+      certifications: ["fair_trade", "global_gap"],
     },
   },
   '0xghi...789': { // Roaster (Torrefação Aroma Fino)
