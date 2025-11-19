@@ -17,8 +17,13 @@ export const mockEnterpriseData: { [publicKey: string]: { role: PartnerRoleKey; 
     profile_metadata: {
       companyName: 'TransCafé Express',
       transportCertifications: ["organic_certified", "sustainable"],
+      origin: "Fazenda Santa Clara, Monte Verde-MG",
+      originCoordinates: { lat: -22.9201, lng: -46.7652 },
+      destination: "Armazém Central, São Paulo-SP",
+      destinationCoordinates: { lat: -23.5505, lng: -46.6333 },
       vehicleType: "truck_dry",
-      vehiclePlate: "ABC1D23", // This field can be auto-populated in a logistics stage
+      vehiclePlate: "ABC1D23",
+      driverName: "Maria Oliveira",
       operationalEmail: 'ops@transcafe.com.br',
       technicalResponsible: 'Maria Oliveira',
     },
@@ -40,22 +45,22 @@ export const mockEnterpriseData: { [publicKey: string]: { role: PartnerRoleKey; 
     profile_metadata: {
       companyName: 'Transportadora Veloz',
       transportCertifications: ["sustainable"],
+      origin: "Fazenda Esperança, Serra Negra-SP",
+      originCoordinates: { lat: -22.6, lng: -46.7 },
+      destination: "Torrefação Aroma Fino, Campinas-SP",
+      destinationCoordinates: { lat: -22.9099, lng: -47.0626 },
       vehicleType: "truck_refrigerated",
-      vehiclePlate: "XYZ5678", // This field can be auto-populated in a logistics stage
+      vehiclePlate: "XYZ5678",
+      driverName: "João da Silva",
       operationalEmail: 'contato@veloz.com',
       technicalResponsible: 'João da Silva',
     },
   },
-  '0xesperancakey123': { // Fazenda Esperança (Producer)
-    role: 'producer',
+  '0xghi...789': { // Roaster (Torrefação Aroma Fino)
+    role: 'roaster',
     profile_metadata: {
-      farmName: "Fazenda Esperança",
-      address: "Estrada do Café, Km 10, Serra Negra, SP",
-      coordinates: { lat: -22.6, lng: -46.7 },
-      altitude: 1100,
-      shadeConsortium: "Cultivo em consórcio com eucaliptos.",
-      producerStory: "Tradição e inovação na produção de cafés finos.",
-      certifications: ["fair_trade"],
+      roasteryName: "Torrefação Aroma Fino",
+      roasteryLocation: { lat: -22.9099, lng: -47.0626 },
     },
   },
   // Adicione mais dados mockados para outros papéis conforme necessário, correspondendo aos seus PARTNER_PROFILES
