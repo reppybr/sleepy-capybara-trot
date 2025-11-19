@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import {
   Truck,
   ClipboardCheck,
-  Factory, // Using Factory for roaster
+  Factory,
   MapPin,
   CheckCircle,
   CircleDashed,
@@ -50,7 +50,7 @@ const getIconForEventType = (type: TimelineEvent['type']) => {
       return Warehouse;
     case 'grader':
       return ClipboardCheck;
-    case 'roaster': // Changed to Factory
+    case 'roaster':
       return Factory;
     case 'packager':
       return Box;
@@ -73,16 +73,18 @@ const getIconForEventType = (type: TimelineEvent['type']) => {
 };
 
 const StageTimeline: React.FC<StageTimelineProps> = ({ stages }) => {
+  // Filter to show only completed stages
+  const completedStages = stages.filter(event => event.status === 'completed');
+
   return (
     <div className="relative pl-8">
       {/* Vertical Line */}
       <div className="absolute left-4 top-0 h-full w-0.5 bg-slate-700"></div>
 
-      {stages.map((event, index) => {
+      {completedStages.map((event, index) => {
         const Icon = getIconForEventType(event.type);
-        const isCompleted = event.status === 'completed';
-        const isActive = event.status === 'active';
-        const isPredicted = event.status === 'predicted';
+        // Since we only show completed stages, all will have this styling
+        const isCompleted = true; 
 
         return (
           <div key={event.id} className="mb-8 flex items-start">
@@ -91,9 +93,7 @@ const StageTimeline: React.FC<StageTimelineProps> = ({ stages }) => {
               <div
                 className={cn(
                   "h-8 w-8 rounded-full flex items-center justify-center",
-                  isCompleted && "bg-emerald-600 text-white",
-                  isActive && "bg-primary text-primary-foreground ring-2 ring-primary/50 animate-pulse",
-                  isPredicted && "bg-slate-700 text-slate-400 border border-slate-600"
+                  isCompleted && "bg-emerald-600 text-white" // Always completed style
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -105,9 +105,7 @@ const StageTimeline: React.FC<StageTimelineProps> = ({ stages }) => {
               <h4
                 className={cn(
                   "text-lg font-semibold",
-                  isCompleted && "text-primary-foreground",
-                  isActive && "text-primary",
-                  isPredicted && "text-muted-foreground"
+                  isCompleted && "text-primary-foreground" // Always completed style
                 )}
               >
                 {event.title}
