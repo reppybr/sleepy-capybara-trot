@@ -399,6 +399,7 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
       fields: [
         {
           name: "roasteryName",
+          autoFill: "roasteryName" ,
           label: "Nome da Torrefação",
           type: "text",
           placeholder: "Ex: Torrefação Arte & Sabor",
@@ -412,6 +413,7 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
             {
               name: "lat",
               label: "Latitude",
+              autoFill: "roasteryLocation.lat" ,
               type: "number", 
               step: "any",
               placeholder: "Ex: -23.5505",
@@ -420,6 +422,7 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
             {
               name: "lng",
               label: "Longitude",
+              autoFill: "roasteryLocation.lng" ,
               type: "number",
               step: "any", 
               placeholder: "Ex: -46.6333",
@@ -713,9 +716,9 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
             { "value": "black", "label": "Pretos" },
             { "value": "sour", "label": "Verdes / Ardidos" },
             { "value": "broken", "label": "Quebrados" },
-            { "value": "insect_damage", "label": "Dano por Inseto" },
-            { "value": "immature", "label": "Imaturos" },
-            { "value": "foreign_material", "label": "Material Estranho" }
+            { "value": "insect_damage", label: "Dano por Inseto" },
+            { "value": "immature", label: "Imaturos" },
+            { "value": "foreign_material", label: "Material Estranho" }
           ]
         },
         {
