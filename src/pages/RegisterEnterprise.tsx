@@ -12,13 +12,8 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MapPin, LocateFixed, X, Plus } from 'lucide-react';
-import {
-  PARTNER_PROFILES,
-  PartnerProfileSchema,
-  FormField,
-  PartnerRoleKey,
-  FieldOption
-} from '@/constants/stageFormSchemas';
+import { PARTNER_PROFILES } from '@/constants/partnerProfiles'; // Import PARTNER_PROFILES from new file
+import { FormField, PartnerProfileSchema, PartnerRoleKey, FieldOption } from '@/types/forms'; // Import types from new file
 import Badge from '@/components/common/Badge'; // Using common Badge component
 
 // Helper to get initial form data from schema

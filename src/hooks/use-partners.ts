@@ -1,4 +1,5 @@
-import { roles } from '@/constants/stageFormSchemas'; // Import roles array
+import { PartnerRoleKey } from '@/types/forms'; // Import PartnerRoleKey from new types file
+import { roles } from '@/constants/roles'; // Import roles array from new file
 
 export type PartnerRole = typeof roles[number]['value']; // Derive type from roles array
 

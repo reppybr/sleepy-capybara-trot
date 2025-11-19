@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext'; // Corrected import path
 import { usePartners, Partner, PartnerRole } from '@/hooks/use-partners'; // Import PartnerRole type
-import { roles } from '@/constants/stageFormSchemas'; // Import roles array
+import { roles } from '@/constants/roles'; // Import roles array from new file
 import PartnerCard from './PartnerCard';
 import SummaryManifestCard from './SummaryManifestCard';
 

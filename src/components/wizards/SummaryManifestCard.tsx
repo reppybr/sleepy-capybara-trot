@@ -5,6 +5,7 @@ import Badge from '@/components/common/Badge'; // Added missing import for Badge
 import { Package, User, Factory, ClipboardList, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Partner } from '@/hooks/use-partners';
+import { roles } from '@/constants/roles'; // Import roles from new file
 
 interface SummaryManifestCardProps {
   batchId: string;
@@ -23,6 +24,12 @@ const SummaryManifestCard: React.FC<SummaryManifestCardProps> = ({
   initialHolder,
   participants,
 }) => {
+  // Helper to get role label from value
+  const getRoleLabel = (roleValue: string) => {
+    const role = roles.find(r => r.value === roleValue);
+    return role ? role.label : roleValue;
+  };
+
   return (
     <Card className="p-6 space-y-6 bg-slate-800/60 backdrop-blur-md border border-slate-700">
       <h3 className="text-2xl font-bold text-primary-foreground flex items-center space-x-3">
@@ -65,7 +72,7 @@ const SummaryManifestCard: React.FC<SummaryManifestCardProps> = ({
             </Avatar>
             <div>
               <p className="font-semibold text-primary-foreground">{initialHolder.name}</p>
-              <p className="text-sm text-muted-foreground">{initialHolder.role} (Posse Inicial)</p>
+              <p className="text-sm text-muted-foreground">{getRoleLabel(initialHolder.role)} (Posse Inicial)</p>
             </div>
           </div>
         )}

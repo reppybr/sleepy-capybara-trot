@@ -10,6 +10,7 @@ import { Loader2, UserPlus, Search } from 'lucide-react';
 import { usePartners, Partner } from '@/hooks/use-partners';
 import PartnerCard from '@/components/wizards/PartnerCard';
 import { addParticipantsToBatch } from '@/api/batchService'; // Import API function
+import { roles } from '@/constants/roles'; // Import roles from new file
 
 interface AddParticipantsModalProps {
   isOpen: boolean;
@@ -34,7 +35,7 @@ const AddParticipantsModal: React.FC<AddParticipantsModalProps> = ({
   const availablePartners = allPartners.filter(
     (p) => !currentParticipantIds.includes(p.id) &&
            (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.role.toLowerCase().includes(searchTerm.toLowerCase()))
+            roles.find(r => r.value === p.role)?.label.toLowerCase().includes(searchTerm.toLowerCase())) // Search by role label
   );
 
   const handleToggleParticipant = (partner: Partner) => {

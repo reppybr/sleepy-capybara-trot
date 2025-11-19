@@ -13,7 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Factory, Truck, Globe, Image, Mail, Phone, User, Lock, Wallet, Clock, Save, Bell } from 'lucide-react';
-import { roles } from '@/constants/stageFormSchemas'; // Import roles array
+import { roles } from '@/constants/roles'; // Import roles array from new file
 import { PartnerRole } from '@/hooks/use-partners'; // Import PartnerRole type
 
 const Settings: React.FC = () => {

@@ -1,4 +1,4 @@
-import { PartnerRoleKey } from '@/constants/stageFormSchemas';
+import { PartnerRoleKey } from '@/types/forms'; // Import PartnerRoleKey from new types file
 
 // This mock data simulates what would be stored in a database for each registered enterprise.
 // Keyed by public_key for easy lookup.

@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { roles } from '@/constants/stageFormSchemas'; // Import roles
+import { roles } from '@/constants/roles'; // Import roles from new file
 import { PartnerRole } from '@/hooks/use-partners'; // Import PartnerRole type
 
 // Mock data for partners

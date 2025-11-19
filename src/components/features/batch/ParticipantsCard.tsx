@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Users, Trash2, X } from 'lucide-react';
 import { Partner } from '@/hooks/use-partners';
-import { roles } from '@/constants/stageFormSchemas';
+import { roles } from '@/constants/roles'; // Import roles from new file
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,

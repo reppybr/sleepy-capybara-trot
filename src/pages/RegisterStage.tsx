@@ -21,7 +21,7 @@ import { DynamicStageForm } from '@/components/features/batch/DynamicStageForm';
 import { TransferCustodyForm } from '@/components/features/batch/TransferCustodyForm';
 import StageTimeline from '@/components/features/batch/StageTimeline'; // Using StageTimeline for the sidebar
 import StatusBadge from '@/components/batches/StatusBadge';
-import { PartnerRoleKey } from '@/constants/stageFormSchemas'; // Import PartnerRoleKey
+import { PartnerRoleKey } from '@/types/forms'; // Import PartnerRoleKey from new types file
 
 const RegisterStage: React.FC = () => {
   const { id: batchId } = useParams<{ id: string }>();

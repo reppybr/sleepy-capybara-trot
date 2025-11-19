@@ -10,7 +10,8 @@ import Card from '@/components/common/Card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Loader2, Save, X, CheckCircle } from 'lucide-react'; // Added CheckCircle icon
-import { STAGE_EVENT_SCHEMAS, FormField, PartnerProfileSchema, PartnerRoleKey, FieldOption } from '@/constants/stageFormSchemas';
+import { STAGE_EVENT_SCHEMAS } from '@/constants/stageEventSchemas'; // Import STAGE_EVENT_SCHEMAS from new file
+import { FormField, PartnerRoleKey, FieldOption, PartnerProfileSchema } from '@/types/forms'; // Import types from new file
 import { useAuth } from '@/context/AuthContext';
 import { registerStage } from '@/api/batchService';
 import Badge from '@/components/common/Badge';

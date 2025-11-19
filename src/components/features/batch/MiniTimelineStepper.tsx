@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Partner } from '@/hooks/use-partners';
-import { roles } from '@/constants/stageFormSchemas';
+import { roles } from '@/constants/roles'; // Import roles from new file
 import { Check, Loader2 } from 'lucide-react';
 
 interface MiniTimelineStepperProps {

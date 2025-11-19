@@ -4,7 +4,7 @@ import Badge from '@/components/common/Badge';
 import Card from '@/components/common/Card';
 import { cn } from '@/lib/utils';
 import { Partner, PartnerRole } from '@/hooks/use-partners'; // Import Partner interface
-import { roles } from '@/constants/stageFormSchemas'; // Import roles array
+import { roles } from '@/constants/roles'; // Import roles array from new file
 
 interface PartnerCardProps {
   partner: Partner;

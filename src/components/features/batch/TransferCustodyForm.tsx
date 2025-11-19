@@ -10,6 +10,7 @@ import { usePartners, Partner } from '@/hooks/use-partners';
 import { transferCustody } from '@/api/batchService'; // Import the API function
 import PartnerCard from '@/components/wizards/PartnerCard'; // Reusing PartnerCard
 import { Input } from '@/components/ui/input'; // Import Input for search
+import { roles } from '@/constants/roles'; // Import roles for filtering
 
 interface TransferCustodyFormProps {
   batch: any; // Full batch data
@@ -32,7 +33,7 @@ export const TransferCustodyForm: React.FC<TransferCustodyFormProps> = ({ batch,
 
   const filteredPartners = eligibleNextHolders.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.role.toLowerCase().includes(searchTerm.toLowerCase())
+    roles.find(r => r.value === p.role)?.label.toLowerCase().includes(searchTerm.toLowerCase()) // Search by role label
   );
 
   const handleSelectNextHolder = (partner: Partner) => {
