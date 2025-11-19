@@ -40,7 +40,7 @@ const mockPendingTasks = [
     arrivalDate: '2024-07-25',
     daysWaiting: 2,
     status: 'Aguardando Recebimento',
-    actionLabel: 'Confirmar Recebimento',
+    actionLabel: 'Registrar Minha Etapa', // Fixed: Should be "Registrar Minha Etapa" for warehouse
     role: 'Armazém',
     assignedToPublicKey: '0xwarehousekey123',
   },
@@ -108,11 +108,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   };
 
   const handleTaskAction = () => {
-    if (task.actionLabel === 'Registrar Minha Etapa' || task.actionLabel === 'Iniciar Torra' || task.actionLabel === 'Confirmar Recebimento') {
-      navigate(`/register-stage/${task.batchId}`);
-    } else {
-      navigate(`/batches/${task.batchId}`);
-    }
+    // All roles now use the same action: navigate to register-stage
+    navigate(`/register-stage/${task.batchId}`);
   };
 
   return (
