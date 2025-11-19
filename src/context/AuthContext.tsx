@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-export type UserRole = 'brand_owner' | 'employee_partner' | 'producer';
+export type UserRole = 'brand_owner' | 'employee_partner' | 'producer' | 'warehouse'; // Added 'warehouse'
 
 export interface User {
   id: string;
@@ -52,16 +52,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         id: 'user-logistics-demo-1',
         name: 'TransCafé Express',
         email: 'ops@transcafe.com.br',
-        role: 'logistics', // Changed back to logistics
+        role: 'logistics',
         public_key: 'WORKER-WALLET-456'
       };
-    } else if (role === 'producer') { // New producer login option
+    } else if (role === 'producer') {
       newUser = {
         id: 'user-producer-demo-1',
         name: 'Fazenda Esperança',
         email: 'contato@esperanca.com',
         role: 'producer',
         public_key: '0xesperancakey123'
+      };
+    } else if (role === 'warehouse') { // New warehouse login option
+      newUser = {
+        id: 'user-warehouse-demo-1',
+        name: 'Armazém Central',
+        email: 'contato@armazemcentral.com',
+        role: 'warehouse',
+        public_key: '0xwarehousekey123'
       };
     }
     setUser(newUser);

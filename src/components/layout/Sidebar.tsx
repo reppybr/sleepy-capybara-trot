@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Factory,
   Leaf, // Added Leaf icon for Producer
+  Warehouse, // Added Warehouse icon
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -43,9 +44,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { label: 'Meu Perfil Corporativo', icon: Factory, path: '/register-enterprise' },
   ];
 
-  const producerSpecificLinks = [ // New links for producer
+  const producerSpecificLinks = [
     { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' },
     { label: 'Meu Perfil Corporativo', icon: Leaf, path: '/register-enterprise' },
+  ];
+
+  const warehouseSpecificLinks = [ // New links for warehouse
+    { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' },
+    { label: 'Meu Perfil Corporativo', icon: Warehouse, path: '/register-enterprise' },
   ];
 
   const settingsLink = { label: 'Configurações', icon: Settings, path: '/settings' };
@@ -54,10 +60,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   if (user.role === 'brand_owner') {
     navigationLinks = [...brandOwnerSpecificLinks, ...navigationLinks];
-  } else if (user.role === 'logistics') { // Changed from employee_partner to logistics
+  } else if (user.role === 'logistics') {
     navigationLinks = [...navigationLinks, ...employeePartnerSpecificLinks];
-  } else if (user.role === 'producer') { // Add producer specific links
+  } else if (user.role === 'producer') {
     navigationLinks = [...producerSpecificLinks, ...navigationLinks];
+  } else if (user.role === 'warehouse') { // Add warehouse specific links
+    navigationLinks = [...warehouseSpecificLinks, ...navigationLinks];
   }
 
   navigationLinks.push(settingsLink);

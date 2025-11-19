@@ -49,6 +49,16 @@ const Login: React.FC = () => {
     }, 1000);
   };
 
+  const handleWarehouseLogin = () => { // New handler for warehouse login
+    toast.loading("Entrando como Armazém...", { id: "login-toast" });
+    login('warehouse');
+    setInjectedTask(null);
+    setTimeout(() => {
+      toast.success("Login como Armazém realizado com sucesso!", { id: "login-toast" });
+      navigate('/tasks'); // Warehouses also go to tasks
+    }, 1000);
+  };
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-slate-950 text-white animate-fade-in">
       {/* Left Panel: Image and Overlay Text */}
@@ -126,6 +136,15 @@ const Login: React.FC = () => {
                 onClick={handleLogisticsPartnerLogin}
               >
                 <span className="font-bold text-lg">Entrar como Operador Logístico</span>
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="lg"
+                className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]"
+                onClick={handleWarehouseLogin}
+              >
+                <span className="font-bold text-lg">Entrar como Armazém</span>
               </Button>
             </div>
           </div>

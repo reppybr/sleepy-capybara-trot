@@ -68,6 +68,22 @@ export const mockEnterpriseData: { [publicKey: string]: { role: PartnerRoleKey; 
       certifications: ["fair_trade", "global_gap"],
     },
   },
+  '0xwarehousekey123': { // Armazém Global (Warehouse - for demo login)
+    role: 'warehouse',
+    profile_metadata: {
+      warehouseName: "Armazém Global",
+      location: "Av. Industrial, 500 - Jundiaí, SP",
+      coordinates: { lat: -23.2183, lng: -46.8703 },
+      storageCapacity: "100 toneladas",
+      internalBatching: "Lotes separados por origem e variedade, identificados por QR Code.",
+      storageType: "big_bag",
+      temperature: 22,
+      humidity: 65,
+      inspectionDate: "2024-10-15",
+      pestControl: "preventive",
+      warehouseNotes: "Instalações modernas com controle de temperatura e umidade."
+    },
+  },
   '0xghi...789': { // Roaster (Torrefação Aroma Fino)
     role: 'roaster',
     profile_metadata: {

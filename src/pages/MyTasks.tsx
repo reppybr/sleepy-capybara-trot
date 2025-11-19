@@ -55,6 +55,17 @@ const mockPendingTasks = [
     role: 'Produtor',
     assignedToPublicKey: '0xesperancakey123', // Producer demo user's public key
   },
+  {
+    id: 'task-wh-001', // New task for warehouse demo user
+    batchId: 'ARM-2024-WH',
+    producer: 'Fazenda União',
+    arrivalDate: '2024-11-21',
+    daysWaiting: 0,
+    status: 'Aguardando Armazenagem',
+    actionLabel: 'Registrar Minha Etapa',
+    role: 'Armazém',
+    assignedToPublicKey: '0xwarehousekey123', // Warehouse demo user's public key
+  },
 ];
 
 const mockHistoryTasks = [
@@ -91,6 +102,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     if (status.includes('Transporte')) return 'criado';
     if (status.includes('Recebimento')) return 'criado';
     if (status.includes('Colheita')) return 'criado'; // New status for producer
+    if (status.includes('Armazenagem')) return 'criado'; // New status for warehouse
     if (status.includes('Concluída') || status.includes('Finalizado')) return 'concluido';
     return 'default';
   };

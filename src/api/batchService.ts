@@ -14,6 +14,7 @@ const mockPartners: Partner[] = [
   { id: 'p8', name: 'TransCafé Express', role: 'logistics', email: 'ops@transcafe.com.br', public_key: 'WORKER-WALLET-456' }, // Mock Logistics Partner
   { id: 'p9', name: 'Transportadora Veloz', role: 'logistics', email: 'contato@veloz.com', public_key: '0xvelozkey789' }, // New Mock Logistics Partner
   { id: 'p10', name: 'Fazenda Esperança', role: 'producer', email: 'contato@esperanca.com', public_key: '0xesperancakey123' }, // New Mock Producer (for demo login)
+  { id: 'p11', name: 'Armazém Global', role: 'warehouse', email: 'contato@armazemglobal.com', public_key: '0xwarehousekey123' }, // New Mock Warehouse (for demo login)
 ];
 
 // Mock Batch Data Store
@@ -179,6 +180,56 @@ let mockBatchesData: any[] = [
           producerName: 'Fazenda Esperança',
           variety: 'Catuaí Amarelo',
           internalNote: 'Lote de teste para produtor demo',
+        },
+        status: 'completed',
+      },
+    ],
+  },
+  // New mock batch for warehouse demo user
+  {
+    details: {
+      id: 'ARM-2024-WH',
+      onchain_id: 'ARM-2024-WH',
+      producer_name: 'Fazenda União',
+      variety: 'Bourbon Amarelo',
+      internal_note: 'Lote para armazenamento temporário',
+      brand_owner_key: '0xbrandownerkey123',
+      current_holder_key: '0xwarehousekey123', // Currently with Armazém Global (warehouse demo)
+      status: 'processing',
+      batch_participants: [
+        { id: 'bp_bo_wh', partner: mockPartners.find(p => p.public_key === '0xbrandownerkey123'), joined_at: '2024-11-21T09:00:00Z' },
+        { id: 'bp_log_wh', partner: mockPartners.find(p => p.public_key === 'WORKER-WALLET-456'), joined_at: '2024-11-21T10:00:00Z' },
+        { id: 'bp_wh_wh', partner: mockPartners.find(p => p.public_key === '0xwarehousekey123'), joined_at: '2024-11-21T11:00:00Z' }, // Armazém Global (warehouse demo)
+      ].filter(bp => bp.partner),
+    },
+    stages: [
+      {
+        id: 'stage-wh-001',
+        type: 'creation',
+        title: 'Lote Criado',
+        actor: 'João Silva',
+        actor_public_key: '0xbrandownerkey123',
+        timestamp: '2024-11-21T09:00:00Z',
+        hash: '0xwh123def456ghi789jkl012mno345pqr678stu901vwx234yz567',
+        formData: {
+          producerName: 'Fazenda União',
+          variety: 'Bourbon Amarelo',
+          internalNote: 'Lote para armazenamento temporário',
+        },
+        status: 'completed',
+      },
+      {
+        id: 'stage-wh-002',
+        type: 'movement',
+        title: 'Recebido pela Logística',
+        actor: 'TransCafé Express',
+        actor_public_key: 'WORKER-WALLET-456',
+        timestamp: '2024-11-21T10:00:00Z',
+        hash: '0xwh456def789ghi012jkl345mno678pqr901stu234vwx567abc1',
+        formData: {
+          origin: 'Fazenda União',
+          destination: 'Armazém Global',
+          vehicleType: 'truck_dry',
         },
         status: 'completed',
       },
