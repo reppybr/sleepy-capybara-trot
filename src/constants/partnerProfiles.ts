@@ -361,6 +361,7 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
         {
           name: "certifications",
           label: "Sustainability Certifications",
+          autoFill: "certifications" ,
           type: "multiselect",
           options: [
             { value: "carbon_neutral", label: "Carbon Neutral" },
@@ -371,10 +372,16 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
             { value: "bird_friendly", label: "Bird Friendly" }
           ]
         },
-       
+        {
+            name: "carbonFootprint",
+            label: "Carbon Footprint (kg CO₂ per kg)",
+            type: "number",
+            placeholder: "e.g., 2.5"
+        },
         {
           name: "waterManagement",
           label: "Water Management",
+          autoFill: "waterManagement" ,
           type: "select",
           placeholder: "Select the primary water practice...",
           options: [
@@ -387,6 +394,7 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
         {
             name: "biodiversityPractices",
             label: "Biodiversity Practices",
+            autoFill: "biodiversityPractices" ,
             type: "multiselect",
             options: [
               { value: "shade_grown", label: "Shade-Grown" },
@@ -399,6 +407,7 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
         {
             name: "renewableEnergyPractices",
             label: "Renewable Energy Usage",
+            autoFill: "renewableEnergyPractices" ,
             type: "multiselect",
             options: [
                 { value: "solar_processing", label: "Solar (Processing)" },
@@ -410,6 +419,7 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
         {
           name: "socialImpact",
           label: "Social Impact Initiatives",
+          autoFill: "socialImpact" ,
           type: "textarea",
           placeholder: "Describe community projects, fair labor conditions, worker benefits, etc."
         }
