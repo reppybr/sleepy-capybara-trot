@@ -4,26 +4,25 @@ import { Coffee, LogIn } from 'lucide-react';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext'; // Use new AuthContext
-import { useInjectedTask, InjectedTask } from '@/context/InjectedTaskContext'; // Use new InjectedTaskContext
-import coffeeImage from '/public/placeholder.svg'; // Using placeholder.svg for coffee image
+import { useAuth } from '@/context/AuthContext';
+import { useInjectedTask, InjectedTask } from '@/context/InjectedTaskContext';
+import coffeeImage from '/public/placeholder.svg';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
   const { setInjectedTask } = useInjectedTask();
 
-  // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard'); // Or to a default authenticated route
+      navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
   const handleBrandOwnerLogin = () => {
     toast.loading("Entrando como Dono da Marca...", { id: "login-toast" });
     login('brand_owner');
-    setInjectedTask(null); // Clear any injected task for brand owner
+    setInjectedTask(null);
     setTimeout(() => {
       toast.success("Login como Dono da Marca realizado com sucesso!", { id: "login-toast" });
       navigate('/dashboard');
@@ -32,11 +31,21 @@ const Login: React.FC = () => {
 
   const handleLogisticsPartnerLogin = () => {
     toast.loading("Entrando como Operador Logístico...", { id: "login-toast" });
-    login('employee_partner');
-    setInjectedTask(null); // Clear any injected task to rely on mockPendingTasks
+    login('employee_partner'); // Now logs in as 'logistics'
+    setInjectedTask(null);
     setTimeout(() => {
       toast.success("Login como Operador Logístico realizado com sucesso!", { id: "login-toast" });
-      navigate('/tasks'); // Still navigate to tasks
+      navigate('/tasks');
+    }, 1000);
+  };
+
+  const handleProducerLogin = () => { // New handler for producer login
+    toast.loading("Entrando como Produtor...", { id: "login-toast" });
+    login('producer');
+    setInjectedTask(null);
+    setTimeout(() => {
+      toast.success("Login como Produtor realizado com sucesso!", { id: "login-toast" });
+      navigate('/tasks'); // Producers also go to tasks to see their stage form
     }, 1000);
   };
 
@@ -70,7 +79,7 @@ const Login: React.FC = () => {
               variant="secondary"
               size="lg"
               className="w-full flex items-center justify-center space-x-2 mt-8 bg-slate-700 text-white hover:bg-slate-600 border-slate-600"
-              disabled // This button is visual only for now
+              disabled
             >
               <LogIn className="h-5 w-5" />
               <span>Conectar Wallet (Em breve)</span>
@@ -93,7 +102,7 @@ const Login: React.FC = () => {
               <p className="text-sm text-muted-foreground">Selecione um perfil para testar a interface:</p>
 
               <Button
-                variant="default" // Amber button
+                variant="default"
                 size="lg"
                 className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]"
                 onClick={handleBrandOwnerLogin}
@@ -102,7 +111,16 @@ const Login: React.FC = () => {
               </Button>
 
               <Button
-                variant="secondary" // Blue/Slate button
+                variant="secondary"
+                size="lg"
+                className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]"
+                onClick={handleProducerLogin}
+              >
+                <span className="font-bold text-lg">Entrar como Produtor</span>
+              </Button>
+
+              <Button
+                variant="secondary"
                 size="lg"
                 className="w-full flex flex-col items-center justify-center gap-1 py-3.5 transform transition-transform duration-200 hover:scale-[1.02]"
                 onClick={handleLogisticsPartnerLogin}

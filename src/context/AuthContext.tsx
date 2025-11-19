@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-export type UserRole = 'brand_owner' | 'employee_partner' | 'producer'; // Added 'producer' to UserRole type
+export type UserRole = 'brand_owner' | 'employee_partner' | 'producer';
 
 export interface User {
   id: string;
@@ -13,7 +13,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean; // New loading state
+  isLoading: boolean;
   login: (role: UserRole) => void;
   logout: () => void;
 }
@@ -22,20 +22,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start as true, as we're loading from localStorage
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from localStorage on initial mount
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (error) {
         console.error("Failed to parse user from localStorage:", error);
-        localStorage.removeItem('user'); // Clear invalid data
+        localStorage.removeItem('user');
       }
     }
-    setIsLoading(false); // Finished loading
+    setIsLoading(false);
   }, []);
 
   const login = (role: UserRole) => {
@@ -49,24 +48,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         public_key: '0xbrandownerkey123'
       };
     } else if (role === 'employee_partner') {
-      // When logging in as 'employee_partner' in demo, we'll make them a 'producer' for testing the form
       newUser = {
-        id: 'user-producer-demo-1', // New ID for this demo producer
-        name: 'Fazenda Esperança', // Name of a mock producer
+        id: 'user-logistics-demo-1',
+        name: 'TransCafé Express',
+        email: 'ops@transcafe.com.br',
+        role: 'logistics', // Changed back to logistics
+        public_key: 'WORKER-WALLET-456'
+      };
+    } else if (role === 'producer') { // New producer login option
+      newUser = {
+        id: 'user-producer-demo-1',
+        name: 'Fazenda Esperança',
         email: 'contato@esperanca.com',
-        role: 'producer', // Changed role to producer
-        public_key: '0xesperancakey123' // Public key of a mock producer
+        role: 'producer',
+        public_key: '0xesperancakey123'
       };
     }
     setUser(newUser);
     if (newUser) {
-      localStorage.setItem('user', JSON.stringify(newUser)); // Persist user
+      localStorage.setItem('user', JSON.stringify(newUser));
     }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user'); // Clear user from persistence
+    localStorage.removeItem('user');
   };
 
   const isAuthenticated = !!user;

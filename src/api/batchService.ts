@@ -13,7 +13,7 @@ const mockPartners: Partner[] = [
   { id: 'p7', name: 'João Silva', role: 'brand_owner', email: 'joao.silva@coffeledger.com', public_key: '0xbrandownerkey123' }, // Mock Brand Owner
   { id: 'p8', name: 'TransCafé Express', role: 'logistics', email: 'ops@transcafe.com.br', public_key: 'WORKER-WALLET-456' }, // Mock Logistics Partner
   { id: 'p9', name: 'Transportadora Veloz', role: 'logistics', email: 'contato@veloz.com', public_key: '0xvelozkey789' }, // New Mock Logistics Partner
-  { id: 'p10', name: 'Fazenda Esperança', role: 'producer', email: 'contato@esperanca.com', public_key: '0xesperancakey123' }, // New Mock Producer
+  { id: 'p10', name: 'Fazenda Esperança', role: 'producer', email: 'contato@esperanca.com', public_key: '0xesperancakey123' }, // New Mock Producer (for demo login)
 ];
 
 // Mock Batch Data Store
@@ -145,6 +145,40 @@ let mockBatchesData: any[] = [
         formData: {
           collectionDate: '2024-11-12',
           vehiclePlate: 'XYZ-5678',
+        },
+        status: 'completed',
+      },
+    ],
+  },
+  // New mock batch for producer demo user
+  {
+    details: {
+      id: 'FES-2024-PROD',
+      onchain_id: 'FES-2024-PROD',
+      producer_name: 'Fazenda Esperança',
+      variety: 'Catuaí Amarelo',
+      internal_note: 'Lote de teste para produtor demo',
+      brand_owner_key: '0xbrandownerkey123',
+      current_holder_key: '0xesperancakey123', // Currently with Fazenda Esperança (producer demo)
+      status: 'processing',
+      batch_participants: [
+        { id: 'bp_bo_prod', partner: mockPartners.find(p => p.public_key === '0xbrandownerkey123'), joined_at: '2024-11-20T08:00:00Z' },
+        { id: 'bp_prod_prod', partner: mockPartners.find(p => p.public_key === '0xesperancakey123'), joined_at: '2024-11-20T08:00:00Z' }, // Fazenda Esperança (producer demo)
+      ].filter(bp => bp.partner),
+    },
+    stages: [
+      {
+        id: 'stage-prod-001',
+        type: 'creation',
+        title: 'Lote Criado',
+        actor: 'João Silva',
+        actor_public_key: '0xbrandownerkey123',
+        timestamp: '2024-11-20T08:00:00Z',
+        hash: '0xprod123def456ghi789jkl012mno345pqr678stu901vwx234yz567',
+        formData: {
+          producerName: 'Fazenda Esperança',
+          variety: 'Catuaí Amarelo',
+          internalNote: 'Lote de teste para produtor demo',
         },
         status: 'completed',
       },

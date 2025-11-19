@@ -11,9 +11,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  Factory, // Certifique-se de que Factory está importado
+  Factory,
+  Leaf, // Added Leaf icon for Producer
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext'; // Import useAuth from new context
+import { useAuth } from '@/context/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,41 +23,44 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth(); // Get user and isAuthenticated from context
+  const { user, isAuthenticated } = useAuth();
 
-  // If not authenticated, don't render sidebar content
   if (!isAuthenticated || !user) {
     return null;
   }
 
-  // Links comuns a todos os usuários autenticados (exceto Dashboard)
   const commonLinks = [
     { label: 'Minha Rede', icon: Users, path: '/partners' },
   ];
 
-  // Links específicos para Donos da Marca
   const brandOwnerSpecificLinks = [
-    { label: 'Visão Geral', icon: LayoutDashboard, path: '/dashboard' }, // Dashboard agora é específico
+    { label: 'Visão Geral', icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Meus Lotes', icon: Package, path: '/batches' },
   ];
 
-  // Links específicos para Parceiros/Funcionários
   const employeePartnerSpecificLinks = [
     { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' },
-    { label: 'Meu Perfil Corporativo', icon: Factory, path: '/register-enterprise' }, // Novo link para o perfil corporativo
+    { label: 'Meu Perfil Corporativo', icon: Factory, path: '/register-enterprise' },
+  ];
+
+  const producerSpecificLinks = [ // New links for producer
+    { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' },
+    { label: 'Meu Perfil Corporativo', icon: Leaf, path: '/register-enterprise' },
   ];
 
   const settingsLink = { label: 'Configurações', icon: Settings, path: '/settings' };
 
-  let navigationLinks = [...commonLinks]; // Começa com links comuns
+  let navigationLinks = [...commonLinks];
 
   if (user.role === 'brand_owner') {
-    navigationLinks = [...brandOwnerSpecificLinks, ...navigationLinks]; // Adiciona links de Brand Owner no início
-  } else if (user.role === 'employee_partner') {
-    navigationLinks = [...navigationLinks, ...employeePartnerSpecificLinks]; // Adiciona links de Employee Partner
+    navigationLinks = [...brandOwnerSpecificLinks, ...navigationLinks];
+  } else if (user.role === 'logistics') { // Changed from employee_partner to logistics
+    navigationLinks = [...navigationLinks, ...employeePartnerSpecificLinks];
+  } else if (user.role === 'producer') { // Add producer specific links
+    navigationLinks = [...producerSpecificLinks, ...navigationLinks];
   }
 
-  navigationLinks.push(settingsLink); // Configurações é sempre disponível
+  navigationLinks.push(settingsLink);
 
   return (
     <aside

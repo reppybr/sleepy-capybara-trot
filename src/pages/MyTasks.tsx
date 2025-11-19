@@ -5,9 +5,9 @@ import Button from '@/components/common/Button';
 import Badge from '@/components/common/Badge';
 import { Clock, Package, Factory, Truck, CheckCircle, XCircle, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext'; // Import useAuth
-import { useInjectedTask } from '@/context/InjectedTaskContext'; // Import useInjectedTask
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useAuth } from '@/context/AuthContext';
+import { useInjectedTask } from '@/context/InjectedTaskContext';
+import { useNavigate } from 'react-router-dom';
 
 // Mock data for tasks
 const mockPendingTasks = [
@@ -23,15 +23,15 @@ const mockPendingTasks = [
     assignedToPublicKey: '0xroasterkey123',
   },
   {
-    id: 'task-002', // This task is now explicitly for the logistics partner
-    batchId: 'FSC-25-9X7K', // Matches the ID in fetchBatchDetails
+    id: 'task-002',
+    batchId: 'FSC-25-9X7K',
     producer: 'Fazenda Santa Clara',
     arrivalDate: '2025-11-18',
     daysWaiting: 0,
     status: 'Aguardando Recebimento',
-    actionLabel: 'Registrar Minha Etapa', // Changed action label here
+    actionLabel: 'Registrar Minha Etapa',
     role: 'Transportadora',
-    assignedToPublicKey: 'WORKER-WALLET-456', // Matches the logistics partner's public key
+    assignedToPublicKey: 'WORKER-WALLET-456', // Logistics partner's public key
   },
   {
     id: 'task-003',
@@ -43,6 +43,17 @@ const mockPendingTasks = [
     actionLabel: 'Confirmar Recebimento',
     role: 'Armazém',
     assignedToPublicKey: '0xwarehousekey123',
+  },
+  {
+    id: 'task-prod-001', // New task for producer demo user
+    batchId: 'FES-2024-PROD',
+    producer: 'Fazenda Esperança',
+    arrivalDate: '2024-11-20',
+    daysWaiting: 0,
+    status: 'Aguardando Colheita',
+    actionLabel: 'Registrar Minha Etapa',
+    role: 'Produtor',
+    assignedToPublicKey: '0xesperancakey123', // Producer demo user's public key
   },
 ];
 
@@ -73,22 +84,21 @@ interface TaskCardProps {
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const isUrgent = task.daysWaiting > 5;
-  const navigate = useNavigate(); // Use useNavigate hook
+  const navigate = useNavigate();
 
   const getStatusVariant = (status: string) => {
     if (status.includes('Torra')) return 'emandamento';
     if (status.includes('Transporte')) return 'criado';
     if (status.includes('Recebimento')) return 'criado';
+    if (status.includes('Colheita')) return 'criado'; // New status for producer
     if (status.includes('Concluída') || status.includes('Finalizado')) return 'concluido';
     return 'default';
   };
 
   const handleTaskAction = () => {
-    // Navigate to the new RegisterStage page for tasks requiring action
     if (task.actionLabel === 'Registrar Minha Etapa' || task.actionLabel === 'Iniciar Torra' || task.actionLabel === 'Confirmar Recebimento') {
       navigate(`/register-stage/${task.batchId}`);
     } else {
-      // For 'Ver Detalhes' or other actions, navigate to BatchDetails
       navigate(`/batches/${task.batchId}`);
     }
   };
@@ -123,18 +133,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
 const MyTasks: React.FC = () => {
   const { user } = useAuth();
-  const { injectedTask } = useInjectedTask(); // No need for setInjectedTask here for clearing
-
-  // Removed the useEffect for automatic redirection
+  const { injectedTask } = useInjectedTask();
 
   const currentPendingTasks = React.useMemo(() => {
     if (!user) return [];
-    // Filter tasks directly from mockPendingTasks based on user's public_key
     return mockPendingTasks.filter(task => task.assignedToPublicKey === user.public_key);
-  }, [user]); // No longer depends on injectedTask
+  }, [user]);
 
   const hasPendingTasks = currentPendingTasks.length > 0;
-  const hasHistoryTasks = mockHistoryTasks.length > 0; // History tasks are not dynamic for now
+  const hasHistoryTasks = mockHistoryTasks.length > 0;
 
   return (
     <div className="space-y-8 py-8">

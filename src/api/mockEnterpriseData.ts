@@ -56,7 +56,7 @@ export const mockEnterpriseData: { [publicKey: string]: { role: PartnerRoleKey; 
       technicalResponsible: 'João da Silva',
     },
   },
-  '0xesperancakey123': { // Fazenda Esperança (Producer)
+  '0xesperancakey123': { // Fazenda Esperança (Producer - for demo login)
     role: 'producer',
     profile_metadata: {
       farmName: "Fazenda Esperança",
