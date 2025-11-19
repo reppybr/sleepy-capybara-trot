@@ -9,11 +9,12 @@ import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Loader2, Save, X } from 'lucide-react';
+import { Loader2, Save, X, CheckCircle } from 'lucide-react'; // Added CheckCircle icon
 import { STAGE_EVENT_SCHEMAS, FormField, PartnerProfileSchema, PartnerRoleKey, FieldOption } from '@/constants/stageFormSchemas';
 import { useAuth } from '@/context/AuthContext';
-import { registerStage } from '@/api/batchService'; // Import the API function
-import Badge from '@/components/common/Badge'; // Import common Badge
+import { registerStage } from '@/api/batchService';
+import Badge from '@/components/common/Badge';
+import { getEnterpriseDataByPublicKey } from '@/api/mockEnterpriseData'; // Import mock enterprise data
 
 interface DynamicStageFormProps {
   batchId: string;
@@ -49,14 +50,42 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set()); // Track auto-filled fields
 
   const stageSchema = STAGE_EVENT_SCHEMAS[partnerType];
 
   useEffect(() => {
     if (stageSchema) {
-      setFormData(getInitialFormData(stageSchema));
+      const initialData = getInitialFormData(stageSchema);
+      let newFormData = { ...initialData };
+      const newAutoFilledFields = new Set<string>();
+
+      if (user?.public_key) {
+        const enterpriseProfile = getEnterpriseDataByPublicKey(user.public_key);
+        if (enterpriseProfile && enterpriseProfile.profile_metadata) {
+          const profileData = enterpriseProfile.profile_metadata;
+
+          // Function to recursively merge profile data into form data
+          const mergeData = (formFields: FormField[], currentFormData: any, currentProfileData: any, path: string = '') => {
+            formFields.forEach(field => {
+              const fullPath = path ? `${path}.${field.name}` : field.name;
+              if (field.type === 'group' && field.fields && currentProfileData[field.name]) {
+                if (!currentFormData[field.name]) currentFormData[field.name] = {};
+                mergeData(field.fields, currentFormData[field.name], currentProfileData[field.name], fullPath);
+              } else if (currentProfileData[field.name] !== undefined) {
+                currentFormData[field.name] = currentProfileData[field.name];
+                newAutoFilledFields.add(fullPath);
+              }
+            });
+          };
+
+          mergeData(stageSchema.fields, newFormData, profileData);
+        }
+      }
+      setFormData(newFormData);
+      setAutoFilledFields(newAutoFilledFields);
     }
-  }, [stageSchema]);
+  }, [stageSchema, user?.public_key]);
 
   const handleChange = (fieldName: string, value: any, groupName?: string) => {
     setFormData(prev => {
@@ -72,6 +101,16 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       return { ...prev, [fieldName]: value };
     });
     setErrors(prev => ({ ...prev, [fieldName]: '' })); // Clear error on change
+
+    // Remove from autoFilledFields if user edits it
+    const fullPath = groupName ? `${groupName}.${fieldName}` : fieldName;
+    if (autoFilledFields.has(fullPath)) {
+      setAutoFilledFields(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fullPath);
+        return newSet;
+      });
+    }
   };
 
   const handleMultiSelectChange = (fieldName: string, selectedValue: string) => {
@@ -84,6 +123,15 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       }
     });
     setErrors(prev => ({ ...prev, [fieldName]: '' }));
+
+    // Remove from autoFilledFields if user edits it
+    if (autoFilledFields.has(fieldName)) {
+      setAutoFilledFields(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fieldName);
+        return newSet;
+      });
+    }
   };
 
   const handleRemoveMultiSelectItem = (fieldName: string, itemToRemove: string) => {
@@ -91,6 +139,14 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       ...prev,
       [fieldName]: (prev[fieldName] || []).filter((v: string) => v !== itemToRemove),
     }));
+    // Remove from autoFilledFields if user edits it
+    if (autoFilledFields.has(fieldName)) {
+      setAutoFilledFields(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fieldName);
+        return newSet;
+      });
+    }
   };
 
   const validateForm = useCallback(() => {
@@ -152,6 +208,8 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
     const fieldId = groupName ? `${groupName}-${field.name}` : field.name;
     const value = groupName ? currentData?.[groupName]?.[field.name] : currentData?.[field.name];
     const hasError = errors[field.name];
+    const fullPath = groupName ? `${groupName}.${field.name}` : field.name;
+    const isAutoFilled = autoFilledFields.has(fullPath);
 
     switch (field.type) {
       case 'text':
@@ -159,8 +217,9 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       case 'date':
         return (
           <div key={fieldId} className="grid gap-2">
-            <Label htmlFor={fieldId} className="text-primary-foreground">
+            <Label htmlFor={fieldId} className="text-primary-foreground flex items-center gap-1">
               {field.label} {field.required && <span className="text-red-500">*</span>}
+              {isAutoFilled && <CheckCircle className="h-3 w-3 text-green-500" title="Preenchido automaticamente" />}
             </Label>
             <Input
               id={fieldId}
@@ -177,8 +236,9 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       case 'textarea':
         return (
           <div key={fieldId} className="grid gap-2">
-            <Label htmlFor={fieldId} className="text-primary-foreground">
+            <Label htmlFor={fieldId} className="text-primary-foreground flex items-center gap-1">
               {field.label} {field.required && <span className="text-red-500">*</span>}
+              {isAutoFilled && <CheckCircle className="h-3 w-3 text-green-500" title="Preenchido automaticamente" />}
             </Label>
             <Textarea
               id={fieldId}
@@ -193,8 +253,9 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       case 'select':
         return (
           <div key={fieldId} className="grid gap-2">
-            <Label htmlFor={fieldId} className="text-primary-foreground">
+            <Label htmlFor={fieldId} className="text-primary-foreground flex items-center gap-1">
               {field.label} {field.required && <span className="text-red-500">*</span>}
+              {isAutoFilled && <CheckCircle className="h-3 w-3 text-green-500" title="Preenchido automaticamente" />}
             </Label>
             <Select onValueChange={(val) => handleChange(field.name, val, groupName)} value={value || ''}>
               <SelectTrigger className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": hasError })}>
@@ -216,8 +277,9 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
         const availableOptions = field.options?.filter(opt => !selectedItems.includes(opt.value)) || [];
         return (
           <div key={fieldId} className="grid gap-2">
-            <Label htmlFor={fieldId} className="text-primary-foreground">
+            <Label htmlFor={fieldId} className="text-primary-foreground flex items-center gap-1">
               {field.label} {field.required && <span className="text-red-500">*</span>}
+              {isAutoFilled && <CheckCircle className="h-3 w-3 text-green-500" title="Preenchido automaticamente" />}
             </Label>
             <div className="flex flex-wrap gap-2 mb-2">
               {selectedItems.map(itemValue => {
