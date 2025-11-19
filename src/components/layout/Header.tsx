@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Menu } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -11,9 +12,12 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  if (!user) return null;
 
   // Mock user data
-  const userName = "João Silva";
+  const userName = user.name;
   const userInitials = userName.split(' ').map(n => n[0]).join('');
 
   // Determine current section title based on route
@@ -31,6 +35,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
         return 'Gerenciamento';
       case '/tasks':
         return 'Minhas Tarefas';
+      case '/register-enterprise':
+        return 'Meu Perfil Corporativo';
       default:
         return 'CoffeLedger';
     }
@@ -40,7 +46,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
 
   const handleLogoClick = () => {
     if (location.pathname !== '/') {
-      navigate('/dashboard');
+      // Navigate to appropriate home page based on role
+      if (user.role === 'brand_owner') {
+        navigate('/dashboard');
+      } else {
+        navigate('/tasks');
+      }
     }
   };
 

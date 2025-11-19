@@ -61,11 +61,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   if (user.role === 'brand_owner') {
     navigationLinks = [...brandOwnerSpecificLinks, ...navigationLinks];
   } else if (user.role === 'logistics') {
-    navigationLinks = [...navigationLinks, ...employeePartnerSpecificLinks];
+    navigationLinks = [...employeePartnerSpecificLinks, ...commonLinks];
   } else if (user.role === 'producer') {
-    navigationLinks = [...producerSpecificLinks, ...navigationLinks];
+    navigationLinks = [...producerSpecificLinks, ...commonLinks];
   } else if (user.role === 'warehouse') { // Add warehouse specific links
-    navigationLinks = [...warehouseSpecificLinks, ...navigationLinks];
+    navigationLinks = [...warehouseSpecificLinks, ...commonLinks];
+  } else {
+    // For other roles, show tasks and profile
+    navigationLinks = [...employeePartnerSpecificLinks, ...commonLinks];
   }
 
   navigationLinks.push(settingsLink);

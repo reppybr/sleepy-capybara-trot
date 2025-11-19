@@ -10,14 +10,19 @@ import coffeeImage from '/public/placeholder.svg';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const { setInjectedTask } = useInjectedTask();
 
   React.useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
+    if (isAuthenticated && user) {
+      // Redirect based on role
+      if (user.role === 'brand_owner') {
+        navigate('/dashboard');
+      } else {
+        navigate('/tasks');
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const handleBrandOwnerLogin = () => {
     toast.loading("Entrando como Dono da Marca...", { id: "login-toast" });
