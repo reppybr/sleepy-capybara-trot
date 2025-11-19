@@ -12,7 +12,7 @@ const ProtectedRoute: React.FC = () => {
     '/dashboard': ['brand_owner'],
     '/batches': ['brand_owner'],
     '/batches/:id': ['brand_owner'],
-    '/partners': ['brand_owner'],
+    '/partners': ['brand_owner', 'producer', 'logistics', 'warehouse', 'roaster', 'grader', 'packager', 'distributor', 'end_consumer', 'sustainability', 'beneficiamento'], // Added worker roles here
     '/register-enterprise': ['brand_owner', 'producer', 'logistics', 'warehouse'],
     '/tasks': ['producer', 'logistics', 'warehouse', 'roaster', 'grader', 'packager', 'distributor', 'end_consumer', 'sustainability', 'beneficiamento'],
     '/register-stage/:id': ['producer', 'logistics', 'warehouse', 'roaster', 'grader', 'packager', 'distributor', 'end_consumer', 'sustainability', 'beneficiamento'],
