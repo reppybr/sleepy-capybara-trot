@@ -21,6 +21,7 @@ import { DynamicStageForm } from '@/components/features/batch/DynamicStageForm';
 import { TransferCustodyForm } from '@/components/features/batch/TransferCustodyForm';
 import StageTimeline from '@/components/features/batch/StageTimeline'; // Using StageTimeline for the sidebar
 import StatusBadge from '@/components/batches/StatusBadge';
+import { PartnerRoleKey } from '@/constants/stageFormSchemas'; // Import PartnerRoleKey
 
 const RegisterStage: React.FC = () => {
   const { id: batchId } = useParams<{ id: string }>();
@@ -31,11 +32,15 @@ const RegisterStage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stageRegistered, setStageRegistered] = useState(false);
+  const [currentHolderRoleKey, setCurrentHolderRoleKey] = useState<PartnerRoleKey | undefined>(undefined);
 
   const refreshBatchData = async () => {
     try {
       const data = await getBatchById(batchId!);
       setBatchData(data);
+      const currentHolderPartner = data.details.batch_participants?.find((p: any) => p.partner.public_key === data.details.current_holder_key)?.partner;
+      setCurrentHolderRoleKey(currentHolderPartner?.role as PartnerRoleKey);
+
       if (user?.public_key !== data.details.current_holder_key) {
         setStageRegistered(true);
       } else {
@@ -63,6 +68,9 @@ const RegisterStage: React.FC = () => {
       try {
         const data = await getBatchById(batchId);
         setBatchData(data);
+        const currentHolderPartner = data.details.batch_participants?.find((p: any) => p.partner.public_key === data.details.current_holder_key)?.partner;
+        setCurrentHolderRoleKey(currentHolderPartner?.role as PartnerRoleKey);
+
         if (user?.public_key !== data.details.current_holder_key) {
           setStageRegistered(true);
         } else {
@@ -137,14 +145,14 @@ const RegisterStage: React.FC = () => {
         </Card>
 
         {/* Dynamic Action Form */}
-        {!isFinalized && isCurrentHolder && !stageRegistered && (
+        {!isFinalized && isCurrentHolder && !stageRegistered && currentHolderRoleKey && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-primary-foreground">Registro de Atividade</h2>
             <p className="text-muted-foreground">Preencha os dados técnicos desta etapa para validar o bloco.</p>
             <DynamicStageForm
               batchId={batchId!}
               onStageAdded={handleStageAdded}
-              partnerType={user?.role || 'employee_partner'}
+              partnerType={currentHolderRoleKey} // Use the specific role of the current holder
             />
           </div>
         )}
