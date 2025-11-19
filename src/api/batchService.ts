@@ -12,6 +12,8 @@ const mockPartners: Partner[] = [
   { id: 'p6', name: 'Armazém Central', role: 'warehouse', email: 'contato@armazemcentral.com', public_key: '0xopq...678' },
   { id: 'p7', name: 'João Silva', role: 'brand_owner', email: 'joao.silva@coffeledger.com', public_key: '0xbrandownerkey123' }, // Mock Brand Owner
   { id: 'p8', name: 'TransCafé Express', role: 'logistics', email: 'ops@transcafe.com.br', public_key: 'WORKER-WALLET-456' }, // Mock Logistics Partner
+  { id: 'p9', name: 'Transportadora Veloz', role: 'logistics', email: 'contato@veloz.com', public_key: '0xvelozkey789' }, // New Mock Logistics Partner
+  { id: 'p10', name: 'Fazenda Esperança', role: 'producer', email: 'contato@esperanca.com', public_key: '0xesperancakey123' }, // New Mock Producer
 ];
 
 // Mock Batch Data Store
@@ -100,7 +102,54 @@ let mockBatchesData: any[] = [
       },
     ],
   },
-  // Add more mock batches as needed
+  {
+    details: {
+      id: 'BTC-2024-089',
+      onchain_id: 'BTC-2024-089',
+      producer_name: 'Fazenda Esperança',
+      variety: 'Catuaí Vermelho 2SL',
+      internal_note: 'Lote para mercado interno',
+      brand_owner_key: '0xbrandownerkey123',
+      current_holder_key: '0xvelozkey789', // Currently with Transportadora Veloz
+      status: 'processing', // Corresponds to IN_TRANSIT
+      batch_participants: [
+        { id: 'bp_bo_089', partner: mockPartners.find(p => p.public_key === '0xbrandownerkey123'), joined_at: '2024-11-12T09:00:00Z' },
+        { id: 'bp_prod_089', partner: mockPartners.find(p => p.id === 'p10'), joined_at: '2024-11-12T09:00:00Z' }, // Fazenda Esperança
+        { id: 'bp_log_089', partner: mockPartners.find(p => p.public_key === '0xvelozkey789'), joined_at: '2024-11-12T10:00:00Z' }, // Transportadora Veloz
+      ].filter(bp => bp.partner),
+    },
+    stages: [
+      {
+        id: 'stage-089-001',
+        type: 'creation',
+        title: 'Lote Criado',
+        actor: 'João Silva',
+        actor_public_key: '0xbrandownerkey123',
+        timestamp: '2024-11-12T09:00:00Z',
+        hash: '0xabc089def456ghi789jkl012mno345pqr678stu901vwx234yz567',
+        formData: {
+          producerName: 'Fazenda Esperança',
+          variety: 'Catuaí Vermelho 2SL',
+          internalNote: 'Lote para mercado interno',
+        },
+        status: 'completed',
+      },
+      {
+        id: 'stage-089-002',
+        type: 'movement',
+        title: 'Coleta Realizada',
+        actor: 'Fazenda Esperança',
+        actor_public_key: mockPartners.find(p => p.id === 'p10')?.public_key,
+        timestamp: '2024-11-12T10:00:00Z',
+        hash: '0x123089abc456def789ghi012jkl345mno678pqr901stu234vwx567',
+        formData: {
+          collectionDate: '2024-11-12',
+          vehiclePlate: 'XYZ-5678',
+        },
+        status: 'completed',
+      },
+    ],
+  },
 ];
 
 export const getBatchById = async (id: string) => {
