@@ -191,7 +191,7 @@ const BatchDetails: React.FC = () => {
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        {/* Column 1: Custody & Technical Data & Management */}
+        {/* Column 1: Custody & Stats */}
         <div className="lg:col-span-1 space-y-6">
           {/* Custódia Atual Card */}
           <Card className="p-6 border-l-4 border-blue-500 bg-slate-800/60 backdrop-blur-md">
@@ -276,8 +276,19 @@ const BatchDetails: React.FC = () => {
           )}
         </div>
 
-        {/* Column 2: Participants Card */}
-        <div className="lg:col-span-1 space-y-6">
+        {/* Column 2 & 3: Operational Timeline & Work Area */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Timeline - VISÍVEL PARA TODOS */}
+          {canSeeTimeline && (
+            <Card className="p-6 bg-slate-800/60 backdrop-blur-md">
+              <h2 className="text-xl font-semibold text-primary-foreground mb-6 flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" /> Log de Eventos e Rastreabilidade
+              </h2>
+              <StageTimeline stages={batchData.stages || []} />
+            </Card>
+          )}
+
+          {/* Card de Participantes Expandido - APENAS BATCH OWNER */}
           {canSeeManagement && batchData.details.batch_participants && (
             <ParticipantsCard
               batchId={batchData.details.id}
@@ -286,18 +297,6 @@ const BatchDetails: React.FC = () => {
               onParticipantRemoved={refreshBatchData}
               batchData={batchData}
             />
-          )}
-        </div>
-
-        {/* Column 3: Operational Timeline (Sidebar) */}
-        <div className="lg:col-span-1 space-y-6">
-          {canSeeTimeline && (
-            <Card className="p-6 bg-slate-800/60 backdrop-blur-md">
-              <h2 className="text-xl font-semibold text-primary-foreground mb-6 flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" /> Log de Eventos e Rastreabilidade
-              </h2>
-              <StageTimeline stages={batchData.stages || []} />
-            </Card>
           )}
         </div>
       </div>
