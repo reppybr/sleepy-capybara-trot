@@ -11,12 +11,13 @@ import MyBatches from "./pages/MyBatches";
 import BatchDetails from "./pages/BatchDetails";
 import Settings from "./pages/Settings";
 import RegisterEnterprise from "./pages/RegisterEnterprise";
-import RegisterStage from "./pages/RegisterStage"; // Import the new page
+import RegisterStage from "./pages/RegisterStage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
 import { AuthProvider } from "./context/AuthContext";
 import { InjectedTaskProvider } from "./context/InjectedTaskContext";
-import ProtectedRoute from "./components/auth/ProtectedRoute"; // Import ProtectedRoute
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import LandingPage from "./pages/LandingPage"; // Import the new landing page
 
 const queryClient = new QueryClient();
 
@@ -29,17 +30,19 @@ const App = () => (
         <AuthProvider>
           <InjectedTaskProvider>
             <Routes>
+              {/* Landing page for root route */}
+              <Route path="/" element={<LandingPage />} />
+              
               {/* Login page does not use the main layout and is publicly accessible */}
               <Route path="/login" element={<Login />} />
 
               {/* Protected routes */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
-                  <Route path="/" element={<Dashboard />} /> {/* Default route is Dashboard */}
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/batches" element={<MyBatches />} />
                   <Route path="/batches/:id" element={<BatchDetails />} />
-                  <Route path="/register-stage/:id" element={<RegisterStage />} /> {/* New route */}
+                  <Route path="/register-stage/:id" element={<RegisterStage />} />
                   <Route path="/partners" element={<Partners />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/register-enterprise" element={<RegisterEnterprise />} />
