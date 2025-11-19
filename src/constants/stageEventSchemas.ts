@@ -542,21 +542,91 @@ export const STAGE_EVENT_SCHEMAS: { [key in PartnerRoleKey]?: PartnerProfileSche
       description: "Detalhes do preparo e experiência do consumidor.",
       icon: "💡",
       fields: [
-        { name: "preparationDate", label: "Data do Preparo", type: "date", required: true },
-        { name: "baristaName", label: "Nome do Barista", type: "text", placeholder: "Ex: Sofia Mendes", required: true },
-        { name: "brewMethod", label: "Método de Preparo", type: "select", required: true, options: [
-          { value: "espresso", label: "Espresso" },
-          { value: "pour_over", label: "Hario V60 / Coado" },
-          { value: "french_press", label: "French Press" },
-          { value: "aeropress", label: "Aeropress" },
-        ]},
-        { name: "grindSize", label: "Moagem", type: "select", options: [
-          { value: "fine", label: "Fina" },
-          { value: "medium", label: "Média" },
-          { value: "coarse", label: "Grossa" },
-        ]},
-        { name: "waterTemperatureC", label: "Temperatura da Água (°C)", type: "number", step: "0.1", placeholder: "Ex: 92.0" },
-        { name: "sensoryExperience", label: "Experiência Sensorial", type: "textarea", placeholder: "Ex: Aroma floral, sabor frutado e finalização limpa." },
+        {
+          name: "preparationMethod",
+          label: "Preparation Method",
+          type: "select",
+          placeholder: "Select the primary brew method...",
+          options: [
+            { value: "espresso", label: "Espresso" },
+            { value: "v60", label: "Hario V60" },
+            { value: "aeropress", label: "AeroPress" },
+            { value: "french_press", label: "French Press" },
+            { value: "chemex", label: "Chemex" },
+            { value: "kalita_wave", label: "Kalita Wave" },
+            { value: "cold_brew", label: "Cold Brew" },
+            { value: "batch_brew", label: "Batch Brew (Percolator)" }
+          ]
+        },
+        {
+          name: "baristaName",
+          label: "Barista or Cafeteria Name",
+          autoFill: "baristaName" ,
+          type: "text",
+          placeholder: "e.g., Jane Doe at The Daily Grind"
+        },
+        {
+          name: "grindSize",
+          label: "Grind Size",
+          type: "select",
+          placeholder: "Select grind size...",
+          options: [
+              { value: "extra_fine", label: "Extra Fine (Turkish)" },
+              { value: "fine", label: "Fine (Espresso)" },
+              { value: "medium_fine", label: "Medium-Fine (V60, AeroPress)" },
+              { value: "medium", label: "Medium (Drip, Chemex)" },
+              { value: "medium_coarse", label: "Medium-Coarse (Chemex)" },
+              { value: "coarse", label: "Coarse (French Press)" },
+              { value: "extra_coarse", label: "Extra Coarse (Cold Brew)" }
+          ]
+        },
+        {
+          name: "doseIn",
+          label: "Dose (grams)",
+          type: "number",
+          placeholder: "e.g., 18.5"
+        },
+        {
+          name: "doseOut",
+          label: "Yield (grams)",
+          type: "number",
+          placeholder: "e.g., 38"
+        },
+        {
+          name: "extractionTime",
+          label: "Extraction Time (seconds)",
+          type: "number",
+          placeholder: "e.g., 28"
+        },
+        {
+          name: "waterTemperature",
+          label: "Water Temperature (°C)",
+          type: "number",
+          placeholder: "e.g., 94"
+        },
+        {
+          name: "tastingNotes",
+          label: "Perceived Tasting Notes",
+          type: "multiselect",
+          placeholder: "Select perceived notes...",
+          options: [
+            { value: "floral", label: "Floral" },
+            { value: "fruity", label: "Fruity" },
+            { value: "citrus", label: "Citrus" },
+            { value: "chocolate", label: "Chocolate" },
+            { value: "caramel", label: "Caramel" },
+            { value: "nutty", label: "Nutty" },
+            { value: "spicy", label: "Spicy" },
+            { value: "winy", label: "Winy / Alcoholic" },
+            { value: "herbaceous", label: "Herbaceous" }
+          ]
+        },
+        {
+          name: "consumerFeedback",
+          label: "General Notes & Consumer Feedback",
+          type: "textarea",
+          placeholder: "e.g., Used in the 2025 Barista Championship, customers noted high sweetness..."
+        }
       ]
     },
   
@@ -682,8 +752,8 @@ export const STAGE_EVENT_SCHEMAS: { [key in PartnerRoleKey]?: PartnerProfileSche
           "options": [
             { "value": "hulling", "label": "Descascamento" },
             { "value": "sieving", "label": "Peneiramento" },
-            { "value": "density_separation", "label": "Separação por Densidade" },
-            { "value": "color_sorting", "label": "Classificação por Cor" }
+            { "value": "density_separation", label: "Separação por Densidade" },
+            { "value": "color_sorting", label: "Classificação por Cor" }
           ]
         },
         {
@@ -694,9 +764,9 @@ export const STAGE_EVENT_SCHEMAS: { [key in PartnerRoleKey]?: PartnerProfileSche
           "options": [
             { "value": "18+", "label": "Peneira 18+" },
             { "value": "17/18", "label": "Peneira 17/18" },
-            { "value": "16/17", "label": "Peneira 16/17" },
-            { "value": "15/16", "label": "Peneira 15/16" },
-            { "value": "14/15", "label": "Peneira 14/15" }
+            { "value": "16/17", label": "Peneira 16/17" },
+            { "value": "15/16", label": "Peneira 15/16" },
+            { "value": "14/15", label": "Peneira 14/15" }
           ]
         },
         {
@@ -710,7 +780,7 @@ export const STAGE_EVENT_SCHEMAS: { [key in PartnerRoleKey]?: PartnerProfileSche
             { "value": "broken", "label": "Quebrados" },
             { "value": "insect_damage", "label": "Dano por Inseto" },
             { "value": "immature", "label": "Imaturos" },
-            { "value": "foreign_material", "label": "Material Estranho" }
+            { "value": "foreign_material", label": "Material Estranho" }
           ]
         },
         {
