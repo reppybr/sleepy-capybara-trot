@@ -188,15 +188,9 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
           placeholder: "Ex: Separado por microlotes, lote A1-A5 para cafés especiais"
         },
         {
-          name: "batchPhotos",
-          label: "Fotos do Lote / Bag",
-          type: "file",
-          description: "Fotos para storytelling e documentação visual"
-        },
-        {
           name: "storageType",
-          label: "Tipo de Armazenamento",
-          type: "select",
+          label: "Tipos de Armazenamento Oferecidos",
+          type: "multiselect",
           options: [
             { value: "silo", label: "Silo" },
             { value: "big_bag", label: "Big Bag" },
@@ -213,35 +207,19 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
         },
         {
           name: "humidity",
-          label: "Umidade Relativa (%)",
+          label: "Umidade Relativa Média (%)",
           type: "number",
           placeholder: "Ex: 60"
         },
         {
-          name: "stockEntryDate",
-          label: "Data de Entrada no Armazém",
-          type: "date"
-        },
-        {
-          name: "stockExitDate",
-          label: "Data de Saída do Armazém",
-          type: "date"
-        },
-        {
-          name: "storageDuration",
-          label: "Tempo de Armazenamento (dias)",
-          type: "number",
-          placeholder: "Ex: 30"
-        },
-        {
           name: "inspectionDate",
-          label: "Data da Última Inspeção",
+          label: "Data da Última Inspeção da Instalação",
           autoFill: "inspectionDate" ,
           type: "date"
         },
         {
           name: "pestControl",
-          label: "Controle de Pragas",
+          label: "Política de Controle de Pragas",
           autoFill: "pestControl" ,
           type: "select",
           options: [
@@ -253,9 +231,9 @@ export const PARTNER_PROFILES: { [key in PartnerRoleKey]?: PartnerProfileSchema 
         },
         {
           name: "warehouseNotes",
-          label: "Observações do Armazém",
+          label: "Observações Gerais do Armazém",
           type: "textarea",
-          placeholder: "Ex: Lotes inspecionados, embalagens verificadas, condições especiais de armazenamento..."
+          placeholder: "Informações sobre as instalações, certificações, horários de funcionamento, etc."
         }
       ]
     },

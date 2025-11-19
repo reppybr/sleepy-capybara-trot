@@ -460,6 +460,12 @@ export const STAGE_EVENT_SCHEMAS: { [key in PartnerRoleKey]?: PartnerProfileSche
         ]
       },
       {
+        name: "batchPhotos",
+        label: "Fotos do Lote / Bag",
+        type: "file",
+        description: "Fotos para storytelling e documentação visual"
+      },
+      {
         name: "warehouseNotes",
         label: "Observações do Armazém",
         type: "textarea",
