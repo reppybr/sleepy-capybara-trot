@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { roles } from '@/constants/roles';
 import { PartnerRole, Partner } from '@/hooks/use-partners';
-import { useAuth } from '@/context/AuthContext'; // Import useAuth to get current user's public key
+import { useAuth } from '@/context/AuthContext';
 
 // Mock data for partners
 const mockPartnersInitial: Partner[] = [
@@ -88,18 +88,29 @@ const mockSentRequestsInitial: SentRequest[] = [
 
 const Partners: React.FC = () => {
   const isMobile = useIsMobile();
-  const { user } = useAuth(); // Get current user for public key
+  const { user } = useAuth();
   const [partners, setPartners] = React.useState<Partner[]>(mockPartnersInitial);
   const [connectionRequests, setConnectionRequests] = React.useState<ConnectionRequest[]>(mockConnectionRequestsInitial);
   const [sentRequests, setSentRequests] = React.useState<SentRequest[]>(mockSentRequestsInitial);
 
+  // State for "Send Request" modal (for non-brand-owners)
   const [isSendRequestModalOpen, setIsSendRequestModalOpen] = React.useState(false);
   const [newRequestData, setNewRequestData] = React.useState({
-    recipientIdentifier: '', // Can be public key or email
+    recipientIdentifier: '',
     addMethod: 'publicKey' as 'publicKey' | 'email',
     message: '',
   });
   const [sendRequestErrors, setSendRequestErrors] = React.useState<{ [key: string]: boolean }>({});
+
+  // State for "Create Partner" modal (for brand-owners)
+  const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = React.useState(false);
+  const [newPartnerData, setNewPartnerData] = React.useState({
+    name: '',
+    role: '' as PartnerRole,
+    email: '',
+    public_key: '',
+  });
+  const [createPartnerErrors, setCreatePartnerErrors] = React.useState<{ [key: string]: boolean }>({});
 
   const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = React.useState(false);
   const [partnerToDelete, setPartnerToDelete] = React.useState<Partner | null>(null);
@@ -115,10 +126,55 @@ const Partners: React.FC = () => {
   });
   const [editErrors, setEditErrors] = React.useState<{ [key: string]: boolean }>({});
 
-  // Helper to get role label from value
   const getRoleLabel = (roleValue: PartnerRole) => {
     const role = roles.find(r => r.value === roleValue);
     return role ? role.label : roleValue;
+  };
+
+  const handleConnectClick = () => {
+    if (user?.role === 'brand_owner') {
+      setIsCreatePartnerModalOpen(true);
+    } else {
+      setIsSendRequestModalOpen(true);
+    }
+  };
+
+  // --- Create Partner Logic (Brand Owner) ---
+  const handleCreatePartnerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setNewPartnerData(prev => ({ ...prev, [id]: value }));
+    setCreatePartnerErrors(prev => ({ ...prev, [id]: false }));
+  };
+
+  const handleCreatePartnerSelectChange = (value: PartnerRole) => {
+    setNewPartnerData(prev => ({ ...prev, role: value }));
+    setCreatePartnerErrors(prev => ({ ...prev, role: false }));
+  };
+
+  const validateCreatePartnerForm = () => {
+    const newErrors: { [key: string]: boolean } = {};
+    if (!newPartnerData.name.trim()) newErrors.name = true;
+    if (!newPartnerData.role) newErrors.role = true;
+    if (!newPartnerData.email.trim() || !/\S+@\S+\.\S+/.test(newPartnerData.email)) newErrors.email = true;
+    if (!newPartnerData.public_key.trim()) newErrors.public_key = true;
+    setCreatePartnerErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleCreatePartner = () => {
+    if (!validateCreatePartnerForm()) {
+      toast.error("Por favor, preencha todos os campos corretamente.");
+      return;
+    }
+    const newPartner: Partner = {
+      id: `p-${Date.now()}`,
+      ...newPartnerData,
+    };
+    setPartners(prev => [...prev, newPartner]);
+    toast.success(`Parceiro "${newPartner.name}" criado e adicionado à sua rede!`);
+    setIsCreatePartnerModalOpen(false);
+    setNewPartnerData({ name: '', role: '' as PartnerRole, email: '', public_key: '' });
+    setCreatePartnerErrors({});
   };
 
   // --- Send Connection Request Logic ---
@@ -129,7 +185,7 @@ const Partners: React.FC = () => {
   };
 
   const handleSendRequestMethodChange = (value: 'publicKey' | 'email') => {
-    setNewRequestData((prev) => ({ ...prev, addMethod: value, recipientIdentifier: '' })); // Clear identifier on method change
+    setNewRequestData((prev) => ({ ...prev, addMethod: value, recipientIdentifier: '' }));
     setSendRequestErrors({});
   };
 
@@ -147,13 +203,11 @@ const Partners: React.FC = () => {
       toast.error("Por favor, preencha o identificador do parceiro.");
       return;
     }
-
-    // Simulate sending request
     const newSentRequest: SentRequest = {
       id: `sent-${Date.now()}`,
-      recipientName: `Parceiro ${newRequestData.recipientIdentifier.substring(0, 8)}...`, // Mock name
+      recipientName: `Parceiro ${newRequestData.recipientIdentifier.substring(0, 8)}...`,
       recipientPublicKey: newRequestData.recipientIdentifier,
-      recipientRole: 'unknown' as PartnerRole, // Role is unknown until accepted
+      recipientRole: 'unknown' as PartnerRole,
       timestamp: new Date().toISOString(),
       status: 'pending',
       message: newRequestData.message,
@@ -167,31 +221,25 @@ const Partners: React.FC = () => {
 
   // --- Handle Incoming Requests Logic ---
   const handleAcceptRequest = (request: ConnectionRequest) => {
-    // Simulate adding to partners
     const newPartner: Partner = {
       id: `p${Date.now()}`,
       name: request.senderName,
       role: request.senderRole,
-      email: 'mock@email.com', // Mock email
+      email: 'mock@email.com',
       public_key: request.senderPublicKey,
     };
     setPartners((prev) => [...prev, newPartner]);
     setConnectionRequests((prev) => prev.filter((req) => req.id !== request.id));
     toast.success(`Conexão com "${request.senderName}" aceita!`);
-
-    // Optionally, update the sender's sent request status (if we had a backend)
     setSentRequests(prev => prev.map(sr => sr.recipientPublicKey === request.senderPublicKey ? { ...sr, status: 'accepted' } : sr));
   };
 
   const handleRejectRequest = (requestId: string) => {
     setConnectionRequests((prev) => prev.filter((req) => req.id !== requestId));
     toast.info("Solicitação de conexão rejeitada.");
-
-    // Optionally, update the sender's sent request status (if we had a backend)
-    // For now, we just remove it from incoming.
   };
 
-  // --- Delete Partner Logic (for accepted partners) ---
+  // --- Delete Partner Logic ---
   const handleDeleteClick = (partner: Partner) => {
     setPartnerToDelete(partner);
     setIsDeleteConfirmModalOpen(true);
@@ -206,7 +254,7 @@ const Partners: React.FC = () => {
     }
   };
 
-  // --- Edit Partner Logic (for accepted partners) ---
+  // --- Edit Partner Logic ---
   const handleEditClick = (partner: Partner) => {
     setPartnerToEdit(partner);
     setEditedPartnerData({
@@ -275,7 +323,7 @@ const Partners: React.FC = () => {
     <div className="space-y-8 py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-primary-foreground">Minha Rede de Parceiros</h1>
-        <Button variant="primary" onClick={() => setIsSendRequestModalOpen(true)} className="flex items-center space-x-2">
+        <Button variant="primary" onClick={handleConnectClick} className="flex items-center space-x-2">
           <UserPlus className="h-4 w-4" />
           <span>Conectar com Parceiro</span>
         </Button>
@@ -372,7 +420,7 @@ const Partners: React.FC = () => {
               <p className="text-muted-foreground max-w-md">
                 Comece a construir sua rede enviando uma solicitação de conexão.
               </p>
-              <Button variant="primary" onClick={() => setIsSendRequestModalOpen(true)} className="flex items-center space-x-2 mt-4">
+              <Button variant="primary" onClick={handleConnectClick} className="flex items-center space-x-2 mt-4">
                 <UserPlus className="h-4 w-4" />
                 <span>Conectar com Parceiro</span>
               </Button>
@@ -467,7 +515,7 @@ const Partners: React.FC = () => {
               <p className="text-muted-foreground max-w-md">
                 Envie uma solicitação para expandir sua rede de parceiros.
               </p>
-              <Button variant="primary" onClick={() => setIsSendRequestModalOpen(true)} className="flex items-center space-x-2 mt-4">
+              <Button variant="primary" onClick={handleConnectClick} className="flex items-center space-x-2 mt-4">
                 <UserPlus className="h-4 w-4" />
                 <span>Conectar com Parceiro</span>
               </Button>
@@ -476,7 +524,7 @@ const Partners: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Send Connection Request Modal */}
+      {/* Send Connection Request Modal (for non-brand-owners) */}
       <Modal
         open={isSendRequestModalOpen}
         onOpenChange={setIsSendRequestModalOpen}
@@ -557,6 +605,58 @@ const Partners: React.FC = () => {
         <div className="flex justify-end mt-6">
           <Button variant="primary" onClick={handleSendConnectionRequest}>
             Enviar Solicitação
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Create Partner Modal (for brand-owners) */}
+      <Modal
+        open={isCreatePartnerModalOpen}
+        onOpenChange={setIsCreatePartnerModalOpen}
+        title="Criar Novo Parceiro"
+        description="Adicione um novo parceiro à sua rede preenchendo os detalhes abaixo."
+        className="sm:max-w-lg"
+      >
+        <div className="grid gap-6 py-4">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="sm:text-right text-primary-foreground">Nome</Label>
+              <div className="sm:col-span-3">
+                <Input id="name" value={newPartnerData.name} onChange={handleCreatePartnerInputChange} className={cn("bg-slate-700 border-slate-600", { "border-red-500": createPartnerErrors.name })} placeholder="Nome da Empresa" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+              <Label htmlFor="role" className="sm:text-right text-primary-foreground">Papel</Label>
+              <div className="sm:col-span-3">
+                <Select onValueChange={handleCreatePartnerSelectChange} value={newPartnerData.role}>
+                  <SelectTrigger className={cn("bg-slate-700 border-slate-600", { "border-red-500": createPartnerErrors.role })}>
+                    <SelectValue placeholder="Selecione o Papel" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    {roles.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="sm:text-right text-primary-foreground">Email</Label>
+              <div className="sm:col-span-3">
+                <Input id="email" type="email" value={newPartnerData.email} onChange={handleCreatePartnerInputChange} className={cn("bg-slate-700 border-slate-600", { "border-red-500": createPartnerErrors.email })} placeholder="contato@empresa.com" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+              <Label htmlFor="public_key" className="sm:text-right text-primary-foreground">Chave Pública</Label>
+              <div className="sm:col-span-3">
+                <Input id="public_key" value={newPartnerData.public_key} onChange={handleCreatePartnerInputChange} className={cn("bg-slate-700 border-slate-600", { "border-red-500": createPartnerErrors.public_key })} placeholder="0x..." />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end mt-6">
+          <Button variant="primary" onClick={handleCreatePartner}>
+            Salvar Parceiro
           </Button>
         </div>
       </Modal>
