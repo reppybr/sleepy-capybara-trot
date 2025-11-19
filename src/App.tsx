@@ -14,10 +14,10 @@ import RegisterEnterprise from "./pages/RegisterEnterprise";
 import RegisterStage from "./pages/RegisterStage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
-import { AuthProvider } from "./context/AuthContext";
+import { SupabaseAuthProvider } from "./context/SupabaseAuthContext";
 import { InjectedTaskProvider } from "./context/InjectedTaskContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import LandingPage from "./pages/LandingPage"; // Import the new landing page
+import LandingPage from "./pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -27,16 +27,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
+        <SupabaseAuthProvider>
           <InjectedTaskProvider>
             <Routes>
-              {/* Landing page for root route */}
               <Route path="/" element={<LandingPage />} />
-              
-              {/* Login page does not use the main layout and is publicly accessible */}
               <Route path="/login" element={<Login />} />
-
-              {/* Protected routes */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
@@ -49,12 +44,10 @@ const App = () => (
                   <Route path="/tasks" element={<MyTasks />} />
                 </Route>
               </Route>
-
-              {/* Catch-all route for 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </InjectedTaskProvider>
-        </AuthProvider>
+        </SupabaseAuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
