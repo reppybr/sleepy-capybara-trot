@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, User, Building2, Mail, KeyRound, ExternalLink, Edit, Trash2, UserPlus, Check, X, Clock } from 'lucide-react';
+import { Plus, User, Users, Building2, Mail, KeyRound, ExternalLink, Edit, Trash2, UserPlus, Check, X, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
