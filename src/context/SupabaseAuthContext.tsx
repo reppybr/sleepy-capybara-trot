@@ -53,7 +53,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         setLoading(true);
         try {
           // Sync user with our backend (creates wallet if new)
-          const response = await fetch('http://localhost:3001/api/auth/sync', {
+          const response = await fetch('https://sleepy-capybara-trot.onrender.com/api/auth/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user: session.user }),
