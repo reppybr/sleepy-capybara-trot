@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users, Clipboard, LogOut, Check } from 'lucide-react'; // Importado 'Check'
+import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users, Clipboard, LogOut, Check } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
@@ -15,8 +15,8 @@ import { toast } from 'sonner';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { session, loading, profile, signOut } = useSupabaseAuth();
-  const [copiedEmail, setCopiedEmail] = useState(false); // Novo estado para email
-  const [copiedPublicKey, setCopiedPublicKey] = useState(false); // Novo estado para chave pública
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedPublicKey, setCopiedPublicKey] = useState(false);
 
   useEffect(() => {
     if (!loading && session && profile) {
@@ -33,11 +33,11 @@ const Login: React.FC = () => {
   }, [session, loading, profile, navigate]);
 
   const handleCopy = (text: string, label: string, setCopiedState: React.Dispatch<React.SetStateAction<boolean>>) => {
-    console.log(`Attempting to copy: "${text}" for label: "${label}"`); // Adicionado para depuração
+    // console.log(`Attempting to copy: "${text}" for label: "${label}"`); // Removido o console.log de depuração
     navigator.clipboard.writeText(text);
     toast.success(`${label} copiado para a área de transferência!`);
     setCopiedState(true);
-    setTimeout(() => setCopiedState(false), 2000); // Reverte o ícone após 2 segundos
+    setTimeout(() => setCopiedState(false), 2000);
   };
 
   if (loading) {
