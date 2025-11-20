@@ -16,14 +16,17 @@ const Login: React.FC = () => {
   useEffect(() => {
     if (!loading && session && profile) {
       if (profile.is_profile_complete) {
-        // Redirect based on role if profile is complete
+        // Case 3: Profile is complete, redirect based on role
         if (profile.role === 'brand_owner') {
           navigate('/dashboard');
         } else {
           navigate('/tasks');
         }
+      } else if (profile.role) {
+        // Case 2: Role is assigned but profile is incomplete, redirect to complete profile
+        navigate('/register-enterprise');
       }
-      // If profile is NOT complete, stay on this page to show the prompt
+      // Case 1: Role is NOT assigned and profile is incomplete, stay on login to show instructions
     }
   }, [session, loading, profile, navigate]);
 
@@ -61,10 +64,11 @@ const Login: React.FC = () => {
             <Coffee className="h-16 w-16 text-primary animate-bounce-slow" />
             <h1 className="text-4xl font-bold text-primary-foreground">Bem-vindo</h1>
             
-            {session && profile && !profile.is_profile_complete ? (
+            {session && profile && !profile.is_profile_complete && !profile.role ? (
+              // Case 1: User logged in, but no role assigned and profile incomplete
               <div className="space-y-6 w-full">
                 <p className="text-lg text-muted-foreground">
-                  Seu perfil está quase pronto! Por favor, complete o registro da sua empresa.
+                  Seu acesso ao sistema está pendente.
                 </p>
                 <div className="text-left space-y-4 w-full">
                   <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2">
@@ -80,31 +84,17 @@ const Login: React.FC = () => {
                   </div>
 
                   <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2 mt-6">
-                    {profile.role ? <Factory className="h-5 w-5 text-primary" /> : <Users className="h-5 w-5 text-primary" />} Próximos Passos
+                    <Users className="h-5 w-5 text-primary" /> Próximos Passos
                   </h2>
                   <div className="space-y-2 text-muted-foreground pl-2">
-                    {profile.role ? (
-                      <p>
-                        Seu papel foi atribuído como **{profile.role}**. Agora, por favor, complete seu perfil corporativo.
-                      </p>
-                    ) : (
-                      <p>
-                        Para continuar, por favor, envie seu **Email** e **Chave Pública** para um administrador do sistema ou um "Dono de Marca" parceiro. Eles irão atribuir seu papel e permitir que você complete seu perfil.
-                      </p>
-                    )}
+                    <p>
+                      Para ter acesso ao sistema, por favor, envie seu **Email** e **Chave Pública** para um administrador do sistema ou um "Dono de Marca" parceiro. Eles irão atribuir seu papel e liberar seu acesso.
+                    </p>
                   </div>
                 </div>
-                {profile.role && ( // Only show "Completar Meu Perfil" if a role has been assigned
-                  <Button 
-                    variant="primary" 
-                    className="w-full mt-6" 
-                    onClick={() => navigate('/register-enterprise')}
-                  >
-                    <ArrowRight className="h-4 w-4 mr-2" /> Completar Meu Perfil
-                  </Button>
-                )}
               </div>
             ) : (
+              // Default: Show Auth UI (if no session or profile is complete and redirected)
               <>
                 <p className="text-lg text-muted-foreground">Conecte-se para gerenciar sua cadeia de suprimentos.</p>
                 <div className="w-full pt-4">
