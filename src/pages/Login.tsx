@@ -33,11 +33,16 @@ const Login: React.FC = () => {
   }, [session, loading, profile, navigate]);
 
   const handleCopy = (text: string, label: string, setCopiedState: React.Dispatch<React.SetStateAction<boolean>>) => {
-    // console.log(`Attempting to copy: "${text}" for label: "${label}"`); // Removido o console.log de depuração
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copiado para a área de transferência!`);
-    setCopiedState(true);
-    setTimeout(() => setCopiedState(false), 2000);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      toast.success(`${label} copiado para a área de transferência!`);
+      setCopiedState(true);
+      setTimeout(() => setCopiedState(false), 2000);
+    } else {
+      // Fallback para ambientes onde a API da área de transferência não está disponível
+      toast.error(`Falha ao copiar ${label}. A API da área de transferência não está disponível ou o contexto é inseguro.`);
+      console.error("Clipboard API not available. Ensure the page is served over HTTPS or localhost.");
+    }
   };
 
   if (loading) {
