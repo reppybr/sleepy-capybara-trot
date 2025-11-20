@@ -33,14 +33,13 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   useEffect(() => {
     const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
-      // Seleção explícita de colunas e remoção de .single() para maior robustez
       const { data, error } = await supabase
         .from('users')
-        .select('auth_user_id, name, email, public_key, role, is_profile_complete')
+        .select('auth_user_id, name, email, public_key, role, is_profile_complete') // Seleção explícita de colunas
         .eq('auth_user_id', supabaseUser.id);
       
       if (error) {
-        console.error("Error fetching user profile:", error); // Log do objeto de erro completo
+        console.error("Error fetching user profile:", error);
         return null;
       }
       
@@ -49,7 +48,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         return null;
       }
 
-      return data[0] as UserProfile; // Retorna o primeiro item se encontrado
+      return data[0] as UserProfile;
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -70,21 +69,14 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
           // After sync, fetch the profile from Supabase
           const userProfile = await fetchUserProfile(session.user);
           
-          // NEW CHECK: If profile exists but role is missing, sign out
-          if (userProfile && !userProfile.role) {
-            console.warn('User profile found but role is missing. Signing out.');
-            await supabase.auth.signOut();
-            setProfile(null); // Clear profile state
-            navigate('/login'); // Redirect to login
-            return; // Stop further processing
-          }
-
-          setProfile(userProfile);
+          // Permitir que o perfil seja definido mesmo que o role esteja faltando.
+          // A página Login.tsx agora será responsável por exibir a mensagem de 'acesso pendente'.
+          setProfile(userProfile); 
           console.log('User synced and profile fetched successfully.');
           // Do NOT navigate here. Login.tsx will handle redirection based on profile completeness.
         } catch (error) {
           console.error('Backend sync or profile fetch error:', error);
-          await supabase.auth.signOut();
+          await supabase.auth.signOut(); // Forçar logout em caso de erro de sincronização ou busca
         } finally {
           setLoading(false);
         }
@@ -96,16 +88,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         // Handle initial session load (e.g., on page refresh)
         const userProfile = await fetchUserProfile(session.user);
         
-        // NEW CHECK: If profile exists but role is missing, sign out
-        if (userProfile && !userProfile.role) {
-          console.warn('User profile found but role is missing. Signing out.');
-          await supabase.auth.signOut();
-          setProfile(null); // Clear profile state
-          navigate('/login'); // Redirect to login
-          setLoading(false); // Ensure loading is false
-          return; // Stop further processing
-        }
-
+        // Permitir que o perfil seja definido mesmo que o role esteja faltando.
         setProfile(userProfile);
         setLoading(false);
       } else {
