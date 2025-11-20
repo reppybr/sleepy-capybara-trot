@@ -63,8 +63,17 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
           
           // After sync, fetch the profile from Supabase
           const userProfile = await fetchUserProfile(session.user);
-          setProfile(userProfile);
+          
+          // NEW CHECK: If profile exists but role is missing, sign out
+          if (userProfile && !userProfile.role) {
+            console.warn('User profile found but role is missing. Signing out.');
+            await supabase.auth.signOut();
+            setProfile(null); // Clear profile state
+            navigate('/login'); // Redirect to login
+            return; // Stop further processing
+          }
 
+          setProfile(userProfile);
           console.log('User synced and profile fetched successfully.');
           // Do NOT navigate here. Login.tsx will handle redirection based on profile completeness.
         } catch (error) {
@@ -78,8 +87,19 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         navigate('/login');
         setLoading(false);
       } else if (session) {
-        // Handle initial session load
+        // Handle initial session load (e.g., on page refresh)
         const userProfile = await fetchUserProfile(session.user);
+        
+        // NEW CHECK: If profile exists but role is missing, sign out
+        if (userProfile && !userProfile.role) {
+          console.warn('User profile found but role is missing. Signing out.');
+          await supabase.auth.signOut();
+          setProfile(null); // Clear profile state
+          navigate('/login'); // Redirect to login
+          setLoading(false); // Ensure loading is false
+          return; // Stop further processing
+        }
+
         setProfile(userProfile);
         setLoading(false);
       } else {
