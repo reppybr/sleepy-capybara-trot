@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Menu } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useSupabaseAuth } from '@/context/SupabaseAuthContext'; // Corrigido o import
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -14,13 +14,17 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useSupabaseAuth(); // Usando useSupabaseAuth
+  const { user, session } = useSupabaseAuth();
 
-  if (!user) return null;
-
-  // Mock user data
-  const userName = user.name;
+  // Safely access user.name and provide a fallback
+  const userName = user?.name || 'Usuário';
   const userInitials = userName.split(' ').map(n => n[0]).join('');
+
+  // If there's no session, or user object is null, don't render the header content that depends on user data.
+  // The ProtectedRoute should handle redirection, but this adds an extra layer of safety.
+  if (!session || !user) {
+    return null; 
+  }
 
   // Determine current section title based on route
   const getSectionTitle = (pathname: string) => {
