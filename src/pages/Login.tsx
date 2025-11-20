@@ -20,7 +20,7 @@ const Login: React.FC = () => {
         if (profile.role === 'brand_owner') {
           navigate('/dashboard');
         } else {
-          navigate('/tasks');
+          navigate('/tasks'); // Isso cobre todos os outros papéis (workers)
         }
       } else if (profile.role) {
         // Case 2: Role is assigned but profile is incomplete, redirect to complete profile
