@@ -103,6 +103,7 @@ const Login: React.FC = () => {
                     appearance={{ theme: ThemeSupa }}
                     providers={['google']}
                     theme="dark"
+                    redirectTo={window.location.origin + '/login'} // Redireciona explicitamente para /login
                     localization={{
                       variables: {
                         sign_in: {
