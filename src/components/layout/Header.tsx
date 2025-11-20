@@ -1,9 +1,11 @@
+"use client";
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Menu } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext'; // Corrigido o import
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -12,7 +14,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth(); // Usando useSupabaseAuth
 
   if (!user) return null;
 

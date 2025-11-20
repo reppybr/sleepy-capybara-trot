@@ -1,4 +1,6 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import Modal from '@/components/common/Modal';
@@ -24,8 +26,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { roles } from '@/constants/roles';
-import { PartnerRole, Partner } from '@/hooks/use-partners';
-import { useAuth } from '@/context/AuthContext';
+import { PartnerRole, Partner } from '@/hooks/use-partners'; // Import Partner interface
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext'; // Corrigido o import
 
 // Mock data for partners
 const mockPartnersInitial: Partner[] = [
@@ -88,7 +90,7 @@ const mockSentRequestsInitial: SentRequest[] = [
 
 const Partners: React.FC = () => {
   const isMobile = useIsMobile();
-  const { user } = useAuth();
+  const { profile: user } = useSupabaseAuth(); // Usando useSupabaseAuth
   const [partners, setPartners] = React.useState<Partner[]>(mockPartnersInitial);
   const [connectionRequests, setConnectionRequests] = React.useState<ConnectionRequest[]>(mockConnectionRequestsInitial);
   const [sentRequests, setSentRequests] = React.useState<SentRequest[]>(mockSentRequestsInitial);
