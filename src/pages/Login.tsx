@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users } from 'lucide-react'; // Adicionado Factory e Users icons
+import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
@@ -80,29 +80,29 @@ const Login: React.FC = () => {
                   </div>
 
                   <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2 mt-6">
-                    {profile.role === 'brand_owner' ? <Factory className="h-5 w-5 text-primary" /> : <Users className="h-5 w-5 text-primary" />} Próximos Passos
+                    {profile.role ? <Factory className="h-5 w-5 text-primary" /> : <Users className="h-5 w-5 text-primary" />} Próximos Passos
                   </h2>
                   <div className="space-y-2 text-muted-foreground pl-2">
-                    {profile.role === 'brand_owner' ? (
+                    {profile.role ? (
                       <p>
-                        Como **Dono de Marca**, por favor, envie um email para{' '}
-                        <a href="mailto:coffeledger@gmail.com" className="text-blue-400 hover:underline">coffeledger@gmail.com</a>{' '}
-                        para validar seu acesso e completar seu perfil corporativo.
+                        Seu papel foi atribuído como **{profile.role}**. Agora, por favor, complete seu perfil corporativo.
                       </p>
                     ) : (
                       <p>
-                        Como **Parceiro da Cadeia de Suprimentos**, por favor, entre em contato com o administrador do sistema para receber seu código de acesso e completar seu perfil.
+                        Para continuar, por favor, envie seu **Email** e **Chave Pública** para um administrador do sistema ou um "Dono de Marca" parceiro. Eles irão atribuir seu papel e permitir que você complete seu perfil.
                       </p>
                     )}
                   </div>
                 </div>
-                <Button 
-                  variant="primary" 
-                  className="w-full mt-6" 
-                  onClick={() => navigate('/register-enterprise')}
-                >
-                  <ArrowRight className="h-4 w-4 mr-2" /> Completar Meu Perfil
-                </Button>
+                {profile.role && ( // Only show "Completar Meu Perfil" if a role has been assigned
+                  <Button 
+                    variant="primary" 
+                    className="w-full mt-6" 
+                    onClick={() => navigate('/register-enterprise')}
+                  >
+                    <ArrowRight className="h-4 w-4 mr-2" /> Completar Meu Perfil
+                  </Button>
+                )}
               </div>
             ) : (
               <>

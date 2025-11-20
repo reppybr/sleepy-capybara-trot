@@ -10,8 +10,8 @@ export interface UserProfile {
   name: string;
   email: string;
   public_key: string;
-  role: PartnerRoleKey;
-  is_profile_complete: boolean; // Added new field
+  role?: PartnerRoleKey; // Tornando o papel opcional
+  is_profile_complete: boolean;
 }
 
 interface AuthContextType {

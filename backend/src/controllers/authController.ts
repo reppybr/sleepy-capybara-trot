@@ -36,8 +36,8 @@ export const syncUser = async (req: Request, res: Response) => {
       name: authUser.user_metadata?.full_name || authUser.email,
       public_key: publicKey,
       encrypted_private_key: encryptedSecretKey,
-      role: 'brand_owner', // Set default role
-      is_profile_complete: false, // New field, default to false
+      // role: 'brand_owner', // REMOVIDO: O papel será definido posteriormente
+      is_profile_complete: false,
     };
 
     const { data: createdUser, error: insertError } = await supabase

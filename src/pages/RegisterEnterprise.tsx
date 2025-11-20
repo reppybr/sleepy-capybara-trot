@@ -11,11 +11,12 @@ import Card from '@/components/common/Card';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { MapPin, LocateFixed, X, Plus } from 'lucide-react';
-import { PARTNER_PROFILES } from '@/constants/partnerProfiles'; // Import PARTNER_PROFILES from new file
-import { FormField, PartnerProfileSchema, PartnerRoleKey, FieldOption } from '@/types/forms'; // Import types from new file
-import Badge from '@/components/common/Badge'; // Using common Badge component
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
+import { MapPin, LocateFixed, X, Plus, Loader2 } from 'lucide-react';
+import { PARTNER_PROFILES } from '@/constants/partnerProfiles';
+import { FormField, PartnerProfileSchema, PartnerRoleKey, FieldOption } from '@/types/forms';
+import Badge from '@/components/common/Badge';
+import { supabase } from '@/integrations/supabase/client';
+import { roles } from '@/constants/roles'; // Import roles for display
 
 // Helper to get initial form data from schema
 const getInitialFormData = (schema: PartnerProfileSchema | undefined) => {
@@ -42,7 +43,7 @@ const getInitialFormData = (schema: PartnerProfileSchema | undefined) => {
 
 const RegisterEnterprise: React.FC = () => {
   const navigate = useNavigate();
-  const { profile: user, session, loading: authLoading } = useSupabaseAuth(); // Get authLoading
+  const { profile: user, session, loading: authLoading } = useSupabaseAuth();
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,7 +56,6 @@ const RegisterEnterprise: React.FC = () => {
     }
 
     if (user && user.is_profile_complete) {
-      // If profile is already complete, redirect to dashboard/tasks
       if (user.role === 'brand_owner') {
         navigate('/dashboard');
       } else {
@@ -64,7 +64,15 @@ const RegisterEnterprise: React.FC = () => {
       return;
     }
 
-    if (user) {
+    // Crucial check: if user has no role assigned, they shouldn't be here
+    if (user && !user.role) {
+      toast.error("Seu papel ainda não foi atribuído. Por favor, entre em contato com o administrador.");
+      navigate('/login'); // Redirect back to login with instructions
+      return;
+    }
+
+    // If user and role are present, load the schema for that role
+    if (user && user.role) {
       const userRoleKey = user.role;
       const schema = PARTNER_PROFILES[userRoleKey];
       if (schema) {
@@ -91,7 +99,7 @@ const RegisterEnterprise: React.FC = () => {
       }
       return { ...prev, [fieldName]: value };
     });
-    setErrors(prev => ({ ...prev, [fieldName]: '' })); // Clear error on change
+    setErrors(prev => ({ ...prev, [fieldName]: '' }));
   };
 
   const handleMultiSelectChange = (fieldName: string, selectedValue: string) => {
@@ -115,7 +123,12 @@ const RegisterEnterprise: React.FC = () => {
 
   const validateForm = useCallback(() => {
     const newErrors: { [key: string]: string } = {};
-    if (!currentProfileSchema) return false;
+    if (!currentProfileSchema) {
+      // This case should ideally not be reached due to the redirect above
+      newErrors.general = "Nenhum esquema de perfil carregado.";
+      setErrors(newErrors);
+      return false;
+    }
 
     const checkField = (field: FormField, currentData: any, groupName?: string) => {
       const value = groupName ? currentData?.[groupName]?.[field.name] : currentData?.[field.name];
@@ -158,8 +171,8 @@ const RegisterEnterprise: React.FC = () => {
       return;
     }
 
-    if (!user) {
-      toast.error("Usuário não autenticado.");
+    if (!user || !user.role) { // Ensure user and role are present
+      toast.error("Usuário não autenticado ou papel não atribuído.");
       return;
     }
 
@@ -167,14 +180,11 @@ const RegisterEnterprise: React.FC = () => {
     toast.loading("Salvando perfil operacional...", { id: "save-profile" });
 
     try {
-      // Simulate API call to save profile metadata
       await new Promise(resolve => setTimeout(resolve, 1000)); 
 
-      // Construct payload for profile_metadata
       const profile_metadata = { ...formData };
-      let companyName = user.name || 'Empresa Desconhecida'; // Default to user's name
+      let companyName = user.name || 'Empresa Desconhecida';
 
-      // Try to find a more specific company name from form data
       if (currentProfileSchema) {
         const nameField = currentProfileSchema.fields.find(f =>
           f.name === 'farmName' || f.name === 'warehouseName' || f.name === 'roasteryName' || f.name === 'packagingCompany' || f.name === 'distributorName' || f.name === 'millingFacilityName'
@@ -184,13 +194,13 @@ const RegisterEnterprise: React.FC = () => {
         }
       }
 
-      // Update the user's profile in the 'users' table
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
-          name: companyName, // Update the user's display name
-          profile_metadata: profile_metadata, // Store the form data as profile_metadata
-          is_profile_complete: true // Mark profile as complete
+          name: companyName,
+          // The role is already set, no need to update it here
+          profile_metadata: profile_metadata,
+          is_profile_complete: true
         })
         .eq('auth_user_id', user.auth_user_id);
 
@@ -199,7 +209,6 @@ const RegisterEnterprise: React.FC = () => {
       }
 
       toast.success("Perfil Operacional Atualizado!", { id: "save-profile" });
-      // Redirect based on role after completing profile
       if (user.role === 'brand_owner') {
         navigate('/dashboard');
       } else {
@@ -213,6 +222,11 @@ const RegisterEnterprise: React.FC = () => {
     }
   };
 
+  const getRoleLabel = (roleValue: PartnerRoleKey) => {
+    const role = roles.find(r => r.value === roleValue);
+    return role ? role.label : roleValue;
+  };
+
   const renderField = (field: FormField, currentData: any, groupName?: string) => {
     const fieldId = groupName ? `${groupName}-${field.name}` : field.name;
     const value = groupName ? currentData?.[groupName]?.[field.name] : currentData?.[field.name];
@@ -222,7 +236,7 @@ const RegisterEnterprise: React.FC = () => {
       case 'text':
       case 'number':
       case 'date':
-      case 'datetime-local': // Added datetime-local
+      case 'datetime-local':
         return (
           <div key={fieldId} className="grid gap-2">
             <Label htmlFor={fieldId} className="text-primary-foreground">
@@ -342,10 +356,19 @@ const RegisterEnterprise: React.FC = () => {
     }
   };
 
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-primary-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3">Carregando perfil...</span>
+      </div>
+    );
+  }
+
   if (!currentProfileSchema) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground text-lg">Carregando perfil ou perfil não disponível...</p>
+        <p className="text-muted-foreground text-lg">Nenhum formulário de perfil disponível para o seu papel.</p>
       </div>
     );
   }
@@ -357,7 +380,9 @@ const RegisterEnterprise: React.FC = () => {
         <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-2">
           <span className="text-primary">{currentProfileSchema.icon}</span> {currentProfileSchema.title}
         </h1>
-        <p className="text-md text-slate-400 mt-1">{currentProfileSchema.description}</p>
+        <p className="text-md text-slate-400 mt-1">
+          Preencha os detalhes para o seu papel como <span className="font-semibold text-primary">{getRoleLabel(user.role)}</span>.
+        </p>
       </div>
 
       {/* Dynamic Form Container */}
@@ -368,10 +393,7 @@ const RegisterEnterprise: React.FC = () => {
             <Button type="submit" variant="primary" disabled={isSubmitting}>
               {isSubmitting ? (
                 <span className="flex items-center space-x-2">
-                  <svg className="animate-spin h-5 w-5 text-primary-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <Loader2 className="h-5 w-5 animate-spin text-primary-foreground" />
                   <span>Salvando...</span>
                 </span>
               ) : (
