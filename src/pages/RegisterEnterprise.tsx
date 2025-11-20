@@ -15,6 +15,7 @@ import { MapPin, LocateFixed, X, Plus } from 'lucide-react';
 import { PARTNER_PROFILES } from '@/constants/partnerProfiles'; // Import PARTNER_PROFILES from new file
 import { FormField, PartnerProfileSchema, PartnerRoleKey, FieldOption } from '@/types/forms'; // Import types from new file
 import Badge from '@/components/common/Badge'; // Using common Badge component
+import { supabase } from '@/integrations/supabase/client'; // Import supabase client
 
 // Helper to get initial form data from schema
 const getInitialFormData = (schema: PartnerProfileSchema | undefined) => {
@@ -41,29 +42,41 @@ const getInitialFormData = (schema: PartnerProfileSchema | undefined) => {
 
 const RegisterEnterprise: React.FC = () => {
   const navigate = useNavigate();
-  const { profile: user, session } = useSupabaseAuth();
+  const { profile: user, session, loading: authLoading } = useSupabaseAuth(); // Get authLoading
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentProfileSchema, setCurrentProfileSchema] = useState<PartnerProfileSchema | null>(null);
 
   useEffect(() => {
-    if (!session || !user) {
+    if (!authLoading && (!session || !user)) {
       navigate('/login');
       return;
     }
 
-    const userRoleKey = user.role;
-    const schema = PARTNER_PROFILES[userRoleKey];
-    if (schema) {
-      setCurrentProfileSchema(schema);
-      setFormData(getInitialFormData(schema));
-      // In a real app, you'd fetch existing data and pre-fill here
-    } else {
-      toast.error("Esquema de perfil não encontrado para o seu papel.");
-      navigate('/dashboard'); // Redirect if no schema
+    if (user && user.is_profile_complete) {
+      // If profile is already complete, redirect to dashboard/tasks
+      if (user.role === 'brand_owner') {
+        navigate('/dashboard');
+      } else {
+        navigate('/tasks');
+      }
+      return;
     }
-  }, [session, user, navigate]);
+
+    if (user) {
+      const userRoleKey = user.role;
+      const schema = PARTNER_PROFILES[userRoleKey];
+      if (schema) {
+        setCurrentProfileSchema(schema);
+        setFormData(getInitialFormData(schema));
+        // In a real app, you'd fetch existing data and pre-fill here
+      } else {
+        toast.error("Esquema de perfil não encontrado para o seu papel.");
+        navigate('/dashboard'); // Redirect if no schema
+      }
+    }
+  }, [session, user, navigate, authLoading]);
 
   const handleChange = (fieldName: string, value: any, groupName?: string) => {
     setFormData(prev => {
@@ -145,40 +158,55 @@ const RegisterEnterprise: React.FC = () => {
       return;
     }
 
+    if (!user) {
+      toast.error("Usuário não autenticado.");
+      return;
+    }
+
     setIsSubmitting(true);
     toast.loading("Salvando perfil operacional...", { id: "save-profile" });
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Simulate API call to save profile metadata
+      await new Promise(resolve => setTimeout(resolve, 1000)); 
 
-      // Construct payload
+      // Construct payload for profile_metadata
       const profile_metadata = { ...formData };
-      let companyName = user?.name || 'Empresa Desconhecida'; // Default to user's name
+      let companyName = user.name || 'Empresa Desconhecida'; // Default to user's name
 
       // Try to find a more specific company name from form data
       if (currentProfileSchema) {
         const nameField = currentProfileSchema.fields.find(f =>
-          f.name === 'farmName' || f.name === 'warehouseName' || f.name === 'roasteryName' || f.name === 'packagingCompany' || f.name === 'distributorName'
+          f.name === 'farmName' || f.name === 'warehouseName' || f.name === 'roasteryName' || f.name === 'packagingCompany' || f.name === 'distributorName' || f.name === 'millingFacilityName'
         );
         if (nameField && formData[nameField.name]) {
           companyName = formData[nameField.name];
         }
       }
 
-      const payload = {
-        public_key: user?.public_key,
-        name: companyName,
-        role: user?.role,
-        profile_metadata: profile_metadata,
-      };
+      // Update the user's profile in the 'users' table
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ 
+          name: companyName, // Update the user's display name
+          profile_metadata: profile_metadata, // Store the form data as profile_metadata
+          is_profile_complete: true // Mark profile as complete
+        })
+        .eq('auth_user_id', user.auth_user_id);
 
-      console.log("Payload para salvar:", payload);
-      // In a real app, send 'payload' to your backend
+      if (updateError) {
+        throw updateError;
+      }
 
       toast.success("Perfil Operacional Atualizado!", { id: "save-profile" });
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error("Falha ao salvar o perfil. Tente novamente.", { id: "save-profile" });
+      // Redirect based on role after completing profile
+      if (user.role === 'brand_owner') {
+        navigate('/dashboard');
+      } else {
+        navigate('/tasks');
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Falha ao salvar o perfil. Tente novamente.", { id: "save-profile" });
       console.error("Error saving profile:", error);
     } finally {
       setIsSubmitting(false);
@@ -194,6 +222,7 @@ const RegisterEnterprise: React.FC = () => {
       case 'text':
       case 'number':
       case 'date':
+      case 'datetime-local': // Added datetime-local
         return (
           <div key={fieldId} className="grid gap-2">
             <Label htmlFor={fieldId} className="text-primary-foreground">

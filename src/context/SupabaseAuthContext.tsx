@@ -11,6 +11,7 @@ export interface UserProfile {
   email: string;
   public_key: string;
   role: PartnerRoleKey;
+  is_profile_complete: boolean; // Added new field
 }
 
 interface AuthContextType {
@@ -42,7 +43,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         console.error("Error fetching user profile:", error);
         return null;
       }
-      return data;
+      return data as UserProfile; // Cast to UserProfile
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -65,7 +66,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
           setProfile(userProfile);
 
           console.log('User synced and profile fetched successfully.');
-          navigate('/dashboard'); // Or based on role
+          // Do NOT navigate here. Login.tsx will handle redirection based on profile completeness.
         } catch (error) {
           console.error('Backend sync or profile fetch error:', error);
           await supabase.auth.signOut();

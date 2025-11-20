@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee } from 'lucide-react';
+import { Coffee, User, Mail, KeyRound, ArrowRight } from 'lucide-react';
 import Card from '@/components/common/Card';
+import Button from '@/components/common/Button';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Auth } from '@supabase/auth-ui-react';
@@ -10,15 +11,34 @@ import coffeeImage from '@/assets/placeholder.svg';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { session, loading } = useSupabaseAuth();
+  const { session, loading, profile } = useSupabaseAuth();
 
   useEffect(() => {
-    if (!loading && session) {
-      // The auth context will handle redirection after sync
-      // but we can add a fallback here.
-      navigate('/dashboard');
+    if (!loading && session && profile) {
+      if (profile.is_profile_complete) {
+        // Redirect based on role if profile is complete
+        if (profile.role === 'brand_owner') {
+          navigate('/dashboard');
+        } else {
+          navigate('/tasks');
+        }
+      }
+      // If profile is NOT complete, stay on this page to show the prompt
     }
-  }, [session, loading, navigate]);
+  }, [session, loading, profile, navigate]);
+
+  const truncatePublicKey = (key: string) => {
+    if (!key) return 'N/A';
+    return `${key.substring(0, 6)}...${key.substring(key.length - 4)}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <p>Carregando sessão...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-slate-950 text-white animate-fade-in">
@@ -40,23 +60,51 @@ const Login: React.FC = () => {
           <div className="flex flex-col items-center space-y-8">
             <Coffee className="h-16 w-16 text-primary animate-bounce-slow" />
             <h1 className="text-4xl font-bold text-primary-foreground">Bem-vindo</h1>
-            <p className="text-lg text-muted-foreground">Conecte-se para gerenciar sua cadeia de suprimentos.</p>
             
-            <div className="w-full pt-4">
-              <Auth
-                supabaseClient={supabase}
-                appearance={{ theme: ThemeSupa }}
-                providers={['google']}
-                theme="dark"
-                localization={{
-                  variables: {
-                    sign_in: {
-                      social_provider_text: 'Entrar com {{provider}}',
-                    },
-                  },
-                }}
-              />
-            </div>
+            {session && profile && !profile.is_profile_complete ? (
+              <div className="space-y-6 w-full">
+                <p className="text-lg text-muted-foreground">
+                  Seu perfil está quase pronto! Por favor, complete o registro da sua empresa.
+                </p>
+                <div className="text-left space-y-2 text-muted-foreground">
+                  <p className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" /> Nome: <span className="font-semibold text-primary-foreground">{profile.name}</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" /> Email: <span className="font-semibold text-primary-foreground">{profile.email}</span>
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <KeyRound className="h-4 w-4 text-primary" /> Chave Pública: <span className="font-mono text-sm text-primary-foreground">{truncatePublicKey(profile.public_key)}</span>
+                  </p>
+                </div>
+                <Button 
+                  variant="primary" 
+                  className="w-full mt-6" 
+                  onClick={() => navigate('/register-enterprise')}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" /> Completar Meu Perfil
+                </Button>
+              </div>
+            ) : (
+              <>
+                <p className="text-lg text-muted-foreground">Conecte-se para gerenciar sua cadeia de suprimentos.</p>
+                <div className="w-full pt-4">
+                  <Auth
+                    supabaseClient={supabase}
+                    appearance={{ theme: ThemeSupa }}
+                    providers={['google']}
+                    theme="dark"
+                    localization={{
+                      variables: {
+                        sign_in: {
+                          social_provider_text: 'Entrar com {{provider}}',
+                        },
+                      },
+                    }}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </Card>
       </div>
