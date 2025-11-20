@@ -33,17 +33,23 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   useEffect(() => {
     const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+      // Seleção explícita de colunas e remoção de .single() para maior robustez
       const { data, error } = await supabase
         .from('users')
-        .select('*')
-        .eq('auth_user_id', supabaseUser.id)
-        .single();
+        .select('auth_user_id, name, email, public_key, role, is_profile_complete')
+        .eq('auth_user_id', supabaseUser.id);
       
-      if (error && error.code !== 'PGRST116') {
-        console.error("Error fetching user profile:", error);
+      if (error) {
+        console.error("Error fetching user profile:", error); // Log do objeto de erro completo
         return null;
       }
-      return data as UserProfile; // Cast to UserProfile
+      
+      if (!data || data.length === 0) {
+        console.warn("No user profile found for auth_user_id:", supabaseUser.id);
+        return null;
+      }
+
+      return data[0] as UserProfile; // Retorna o primeiro item se encontrado
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
