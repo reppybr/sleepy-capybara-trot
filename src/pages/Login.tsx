@@ -33,6 +33,7 @@ const Login: React.FC = () => {
   }, [session, loading, profile, navigate]);
 
   const handleCopy = (text: string, label: string, setCopiedState: React.Dispatch<React.SetStateAction<boolean>>) => {
+    console.log(`Attempting to copy: "${text}" for label: "${label}"`); // Adicionado para depuração
     navigator.clipboard.writeText(text);
     toast.success(`${label} copiado para a área de transferência!`);
     setCopiedState(true);
