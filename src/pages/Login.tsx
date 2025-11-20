@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, User, Mail, KeyRound, ArrowRight } from 'lucide-react';
+import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users } from 'lucide-react'; // Adicionado Factory e Users icons
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
@@ -66,16 +66,35 @@ const Login: React.FC = () => {
                 <p className="text-lg text-muted-foreground">
                   Seu perfil está quase pronto! Por favor, complete o registro da sua empresa.
                 </p>
-                <div className="text-left space-y-2 text-muted-foreground">
-                  <p className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-primary" /> Nome: <span className="font-semibold text-primary-foreground">{profile.name}</span>
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-primary" /> Email: <span className="font-semibold text-primary-foreground">{profile.email}</span>
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <KeyRound className="h-4 w-4 text-primary" /> Chave Pública: <span className="font-mono text-sm text-primary-foreground">{truncatePublicKey(profile.public_key)}</span>
-                  </p>
+                <div className="text-left space-y-4 w-full">
+                  <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" /> Suas Informações
+                  </h2>
+                  <div className="space-y-2 text-muted-foreground pl-2">
+                    <p className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary" /> Email: <span className="font-semibold text-primary-foreground">{profile.email}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <KeyRound className="h-4 w-4 text-primary" /> Chave Pública: <span className="font-mono text-sm text-primary-foreground">{truncatePublicKey(profile.public_key)}</span>
+                    </p>
+                  </div>
+
+                  <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2 mt-6">
+                    {profile.role === 'brand_owner' ? <Factory className="h-5 w-5 text-primary" /> : <Users className="h-5 w-5 text-primary" />} Próximos Passos
+                  </h2>
+                  <div className="space-y-2 text-muted-foreground pl-2">
+                    {profile.role === 'brand_owner' ? (
+                      <p>
+                        Como **Dono de Marca**, por favor, envie um email para{' '}
+                        <a href="mailto:coffeledger@gmail.com" className="text-blue-400 hover:underline">coffeledger@gmail.com</a>{' '}
+                        para validar seu acesso e completar seu perfil corporativo.
+                      </p>
+                    ) : (
+                      <p>
+                        Como **Parceiro da Cadeia de Suprimentos**, por favor, entre em contato com o administrador do sistema para receber seu código de acesso e completar seu perfil.
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <Button 
                   variant="primary" 
