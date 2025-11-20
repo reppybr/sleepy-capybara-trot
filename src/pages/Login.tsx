@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users } from 'lucide-react';
+import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users, Clipboard, LogOut } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
@@ -8,10 +8,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import coffeeImage from '@/assets/placeholder.svg';
+import { Input } from '@/components/ui/input'; // Import Input
+import { Label } from '@/components/ui/label'; // Import Label
+import { toast } from 'sonner'; // Import sonner toast
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { session, loading, profile } = useSupabaseAuth();
+  const { session, loading, profile, signOut } = useSupabaseAuth(); // Adicionado signOut
 
   useEffect(() => {
     if (!loading && session && profile) {
@@ -33,6 +36,11 @@ const Login: React.FC = () => {
   const truncatePublicKey = (key: string) => {
     if (!key) return 'N/A';
     return `${key.substring(0, 6)}...${key.substring(key.length - 4)}`;
+  };
+
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado para a área de transferência!`);
   };
 
   if (loading) {
@@ -70,28 +78,67 @@ const Login: React.FC = () => {
                 <p className="text-lg text-muted-foreground">
                   Seu acesso ao sistema está pendente.
                 </p>
-                <div className="text-left space-y-4 w-full">
+
+                <Card className="p-6 space-y-4 bg-slate-800/60 backdrop-blur-md border border-slate-700 text-left">
                   <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2">
                     <User className="h-5 w-5 text-primary" /> Suas Informações
                   </h2>
-                  <div className="space-y-2 text-muted-foreground pl-2">
-                    <p className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-primary" /> Email: <span className="font-semibold text-primary-foreground">{profile.email}</span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <KeyRound className="h-4 w-4 text-primary" /> Chave Pública: <span className="font-mono text-sm text-primary-foreground">{truncatePublicKey(profile.public_key)}</span>
-                    </p>
+                  <div className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="user-email" className="text-muted-foreground">Email</Label>
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          id="user-email"
+                          type="email"
+                          value={profile.email}
+                          readOnly
+                          className="flex-grow bg-slate-700 border-slate-600 text-primary-foreground font-bold"
+                        />
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => handleCopy(profile.email, 'Email')}
+                          title="Copiar Email"
+                        >
+                          <Clipboard className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="user-public-key" className="text-muted-foreground">Chave Pública</Label>
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          id="user-public-key"
+                          value={profile.public_key}
+                          readOnly
+                          className="flex-grow bg-slate-700 border-slate-600 text-primary-foreground font-bold font-mono text-sm"
+                        />
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          onClick={() => handleCopy(profile.public_key, 'Chave Pública')}
+                          title="Copiar Chave Pública"
+                        >
+                          <Clipboard className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
+                </Card>
 
-                  <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2 mt-6">
+                <Card className="p-6 space-y-4 bg-slate-800/60 backdrop-blur-md border border-slate-700 text-left">
+                  <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" /> Próximos Passos
                   </h2>
-                  <div className="space-y-2 text-muted-foreground pl-2">
-                    <p>
-                      Para ter acesso ao sistema, por favor, envie seu **Email** e **Chave Pública** para um administrador do sistema ou um "Dono de Marca" parceiro. Eles irão atribuir seu papel e liberar seu acesso.
-                    </p>
-                  </div>
-                </div>
+                  <p className="text-muted-foreground">
+                    Para ter acesso ao sistema, por favor, envie seu **Email** e **Chave Pública** para um administrador do sistema ou um "Dono de Marca" parceiro. Eles irão atribuir seu papel e liberar seu acesso.
+                  </p>
+                </Card>
+
+                <Button variant="danger" onClick={signOut} className="w-full mt-6 flex items-center justify-center space-x-2">
+                  <LogOut className="h-4 w-4" />
+                  <span>Sair da Conta</span>
+                </Button>
               </div>
             ) : (
               // Default: Show Auth UI (if no session or profile is complete and redirected)
