@@ -15,7 +15,7 @@ import {
   Leaf, // Added Leaf icon for Producer
   Warehouse, // Added Warehouse icon
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext'; // Corrigido o import
 
 interface SidebarProps {
   isOpen: boolean;
@@ -24,9 +24,9 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, session } = useSupabaseAuth(); // Usando useSupabaseAuth e session
 
-  if (!isAuthenticated || !user) {
+  if (!session || !user) { // Verificando session e user para renderizar a sidebar
     return null;
   }
 
