@@ -131,7 +131,7 @@ const Login: React.FC = () => {
                     <Users className="h-5 w-5 text-primary" /> Próximos Passos
                   </h2>
                   <p className="text-muted-foreground">
-                    Para ter acesso ao sistema, por favor, envie seu **Email** e **Chave Pública** para um administrador do sistema ou um "Dono de Marca" parceiro. Eles irão atribuir seu papel e liberar seu acesso.
+                    Para ter acesso ao sistema, por favor, envie seu <strong>Email</strong> e <strong>Chave Pública</strong> para um administrador do sistema ou um "Dono de Marca" parceiro. Eles irão atribuir seu papel e liberar seu acesso.
                   </p>
                 </Card>
 
