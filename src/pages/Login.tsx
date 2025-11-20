@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users, Clipboard, LogOut } from 'lucide-react';
+import { Coffee, User, Mail, KeyRound, ArrowRight, Factory, Users, Clipboard, LogOut, Check } from 'lucide-react'; // Importado 'Check'
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
@@ -8,39 +8,35 @@ import { supabase } from '@/integrations/supabase/client';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import coffeeImage from '@/assets/placeholder.svg';
-import { Input } from '@/components/ui/input'; // Import Input
-import { Label } from '@/components/ui/label'; // Import Label
-import { toast } from 'sonner'; // Import sonner toast
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { session, loading, profile, signOut } = useSupabaseAuth(); // Adicionado signOut
+  const { session, loading, profile, signOut } = useSupabaseAuth();
+  const [copiedEmail, setCopiedEmail] = useState(false); // Novo estado para email
+  const [copiedPublicKey, setCopiedPublicKey] = useState(false); // Novo estado para chave pública
 
   useEffect(() => {
     if (!loading && session && profile) {
       if (profile.is_profile_complete) {
-        // Case 3: Profile is complete, redirect based on role
         if (profile.role === 'brand_owner') {
           navigate('/dashboard');
         } else {
-          navigate('/tasks'); // Isso cobre todos os outros papéis (workers)
+          navigate('/tasks');
         }
       } else if (profile.role) {
-        // Case 2: Role is assigned but profile is incomplete, redirect to complete profile
         navigate('/register-enterprise');
       }
-      // Case 1: Role is NOT assigned and profile is incomplete, stay on login to show instructions
     }
   }, [session, loading, profile, navigate]);
 
-  const truncatePublicKey = (key: string) => {
-    if (!key) return 'N/A';
-    return `${key.substring(0, 6)}...${key.substring(key.length - 4)}`;
-  };
-
-  const handleCopy = (text: string, label: string) => {
+  const handleCopy = (text: string, label: string, setCopiedState: React.Dispatch<React.SetStateAction<boolean>>) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copiado para a área de transferência!`);
+    setCopiedState(true);
+    setTimeout(() => setCopiedState(false), 2000); // Reverte o ícone após 2 segundos
   };
 
   if (loading) {
@@ -73,7 +69,6 @@ const Login: React.FC = () => {
             <h1 className="text-4xl font-bold text-primary-foreground">Bem-vindo</h1>
             
             {session && profile && !profile.is_profile_complete && !profile.role ? (
-              // Case 1: User logged in, but no role assigned and profile incomplete
               <div className="space-y-6 w-full">
                 <p className="text-lg text-muted-foreground">
                   Seu acesso ao sistema está pendente.
@@ -97,10 +92,11 @@ const Login: React.FC = () => {
                         <Button
                           variant="secondary"
                           size="icon"
-                          onClick={() => handleCopy(profile.email, 'Email')}
+                          onClick={() => handleCopy(profile.email, 'Email', setCopiedEmail)}
                           title="Copiar Email"
+                          className="transition-all duration-200 active:scale-95"
                         >
-                          <Clipboard className="h-4 w-4" />
+                          {copiedEmail ? <Check className="h-4 w-4 text-emerald-500" /> : <Clipboard className="h-4 w-4" />}
                         </Button>
                       </div>
                     </div>
@@ -116,10 +112,11 @@ const Login: React.FC = () => {
                         <Button
                           variant="secondary"
                           size="icon"
-                          onClick={() => handleCopy(profile.public_key, 'Chave Pública')}
+                          onClick={() => handleCopy(profile.public_key, 'Chave Pública', setCopiedPublicKey)}
                           title="Copiar Chave Pública"
+                          className="transition-all duration-200 active:scale-95"
                         >
-                          <Clipboard className="h-4 w-4" />
+                          {copiedPublicKey ? <Check className="h-4 w-4 text-emerald-500" /> : <Clipboard className="h-4 w-4" />}
                         </Button>
                       </div>
                     </div>
@@ -141,7 +138,6 @@ const Login: React.FC = () => {
                 </Button>
               </div>
             ) : (
-              // Default: Show Auth UI (if no session or profile is complete and redirected)
               <>
                 <p className="text-lg text-muted-foreground">Conecte-se para gerenciar sua cadeia de suprimentos.</p>
                 <div className="w-full pt-4">
@@ -150,7 +146,7 @@ const Login: React.FC = () => {
                     appearance={{ theme: ThemeSupa }}
                     providers={['google']}
                     theme="dark"
-                    redirectTo={window.location.origin + '/login'} // Redireciona explicitamente para /login
+                    redirectTo={window.location.origin + '/login'}
                     localization={{
                       variables: {
                         sign_in: {
