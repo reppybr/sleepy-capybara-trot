@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Users, Building2, Mail, KeyRound, ExternalLink, Edit, Trash2, UserPlus, Check, X, Clock } from 'lucide-react';
+import { Plus, User, Users, Building2, Mail, KeyRound, ExternalLink, Edit, Trash2, UserPlus, Check, X, Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -107,12 +107,14 @@ const Partners: React.FC = () => {
   // State for "Create Partner" modal (for brand-owners)
   const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = React.useState(false);
   const [newPartnerData, setNewPartnerData] = React.useState({
-    name: '',
+    identifier: '', // Can be public_key or email
+    identifierMethod: 'publicKey' as 'publicKey' | 'email',
     role: '' as PartnerRole,
-    email: '',
-    public_key: '',
+    name: '', // Optional, for display purposes or to update user's name
   });
   const [createPartnerErrors, setCreatePartnerErrors] = React.useState<{ [key: string]: boolean }>({});
+  const [isCreatingPartner, setIsCreatingPartner] = useState(false);
+
 
   const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = React.useState(false);
   const [partnerToDelete, setPartnerToDelete] = React.useState<Partner | null>(null);
@@ -153,30 +155,71 @@ const Partners: React.FC = () => {
     setCreatePartnerErrors(prev => ({ ...prev, role: false }));
   };
 
+  const handleCreatePartnerIdentifierMethodChange = (value: 'publicKey' | 'email') => {
+    setNewPartnerData(prev => ({ ...prev, identifierMethod: value, identifier: '' }));
+    setCreatePartnerErrors({});
+  };
+
   const validateCreatePartnerForm = () => {
     const newErrors: { [key: string]: boolean } = {};
-    if (!newPartnerData.name.trim()) newErrors.name = true;
+    if (!newPartnerData.identifier.trim()) newErrors.identifier = true;
+    if (newPartnerData.identifierMethod === 'email' && !/\S+@\S+\.\S+/.test(newPartnerData.identifier)) newErrors.identifier = true;
     if (!newPartnerData.role) newErrors.role = true;
-    if (!newPartnerData.email.trim() || !/\S+@\S+\.\S+/.test(newPartnerData.email)) newErrors.email = true;
-    if (!newPartnerData.public_key.trim()) newErrors.public_key = true;
     setCreatePartnerErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleCreatePartner = () => {
+  const handleCreatePartner = async () => {
     if (!validateCreatePartnerForm()) {
-      toast.error("Por favor, preencha todos os campos corretamente.");
+      toast.error("Por favor, preencha todos os campos obrigatórios corretamente.");
       return;
     }
-    const newPartner: Partner = {
-      id: `p-${Date.now()}`,
-      ...newPartnerData,
-    };
-    setPartners(prev => [...prev, newPartner]);
-    toast.success(`Parceiro "${newPartner.name}" criado e adicionado à sua rede!`);
-    setIsCreatePartnerModalOpen(false);
-    setNewPartnerData({ name: '', role: '' as PartnerRole, email: '', public_key: '' });
-    setCreatePartnerErrors({});
+
+    setIsCreatingPartner(true);
+    toast.loading("Atribuindo papel ao parceiro...", { id: "assign-partner-role" });
+
+    try {
+      const response = await fetch('https://sleepy-capybara-trot.onrender.com/api/user-management/assign-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: newPartnerData.identifier,
+          method: newPartnerData.identifierMethod,
+          role: newPartnerData.role,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao atribuir o papel ao parceiro.');
+      }
+
+      const result = await response.json();
+      const assignedPartner: Partner = {
+        id: result.user.id, // Use the ID returned from the backend
+        name: result.user.name || newPartnerData.name || result.user.email, // Use name from backend, or provided name, or email
+        role: result.user.role,
+        email: result.user.email,
+        public_key: result.user.public_key,
+      };
+
+      setPartners(prev => {
+        // Check if partner already exists in the local list (e.g., if role was just updated)
+        if (prev.some(p => p.public_key === assignedPartner.public_key)) {
+          return prev.map(p => p.public_key === assignedPartner.public_key ? assignedPartner : p);
+        }
+        return [...prev, assignedPartner];
+      });
+      toast.success(`Parceiro "${assignedPartner.name}" agora é um ${getRoleLabel(assignedPartner.role)}!`, { id: "assign-partner-role" });
+      setIsCreatePartnerModalOpen(false);
+      setNewPartnerData({ identifier: '', identifierMethod: 'publicKey', role: '' as PartnerRole, name: '' });
+      setCreatePartnerErrors({});
+    } catch (error: any) {
+      toast.error(error.message || "Falha ao atribuir o papel ao parceiro. Tente novamente.", { id: "assign-partner-role" });
+      console.error("Error assigning partner role:", error);
+    } finally {
+      setIsCreatingPartner(false);
+    }
   };
 
   // --- Send Connection Request Logic ---
@@ -615,50 +658,105 @@ const Partners: React.FC = () => {
       <Modal
         open={isCreatePartnerModalOpen}
         onOpenChange={setIsCreatePartnerModalOpen}
-        title="Criar Novo Parceiro"
-        description="Adicione um novo parceiro à sua rede preenchendo os detalhes abaixo."
+        title="Atribuir Papel a Parceiro"
+        description="Atribua um papel a um usuário existente na plataforma. O usuário precisará fazer login novamente para que a mudança seja aplicada."
         className="sm:max-w-lg"
       >
         <div className="grid gap-6 py-4">
           <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-primary-foreground flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" /> Identificador do Usuário
+            </h3>
+            <Tabs defaultValue="publicKey" className="w-full" onValueChange={handleCreatePartnerIdentifierMethodChange}>
+              <TabsList className="grid w-full grid-cols-2 bg-card border border-border">
+                <TabsTrigger value="publicKey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <KeyRound className="h-4 w-4 mr-2" /> Chave Pública
+                </TabsTrigger>
+                <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Mail className="h-4 w-4 mr-2" /> Email
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="publicKey" className="mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+                  <Label htmlFor="identifier" className="sm:text-right text-primary-foreground">
+                    Chave Pública
+                  </Label>
+                  <div className="sm:col-span-3">
+                    <Input
+                      id="identifier"
+                      value={newPartnerData.identifier}
+                      onChange={handleCreatePartnerInputChange}
+                      className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": createPartnerErrors.identifier })}
+                      placeholder="Chave Pública (Wallet) do Parceiro"
+                    />
+                    {createPartnerErrors.identifier && (
+                      <p className="text-red-500 text-xs mt-1">A chave pública é obrigatória.</p>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="email" className="mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
+                  <Label htmlFor="identifier" className="sm:text-right text-primary-foreground">
+                    Email
+                  </Label>
+                  <div className="sm:col-span-3">
+                    <Input
+                      id="identifier"
+                      type="email"
+                      value={newPartnerData.identifier}
+                      onChange={handleCreatePartnerInputChange}
+                      className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": createPartnerErrors.identifier })}
+                      placeholder="email@parceiro.com"
+                    />
+                    {createPartnerErrors.identifier && (
+                      <p className="text-red-500 text-xs mt-1">O email é obrigatório.</p>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+
             <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="sm:text-right text-primary-foreground">Nome</Label>
-              <div className="sm:col-span-3">
-                <Input id="name" value={newPartnerData.name} onChange={handleCreatePartnerInputChange} className={cn("bg-slate-700 border-slate-600", { "border-red-500": createPartnerErrors.name })} placeholder="Nome da Empresa" />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="sm:text-right text-primary-foreground">Papel</Label>
+              <Label htmlFor="role" className="sm:text-right text-primary-foreground">Papel a Atribuir</Label>
               <div className="sm:col-span-3">
                 <Select onValueChange={handleCreatePartnerSelectChange} value={newPartnerData.role}>
-                  <SelectTrigger className={cn("bg-slate-700 border-slate-600", { "border-red-500": createPartnerErrors.role })}>
+                  <SelectTrigger className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": createPartnerErrors.role })}>
                     <SelectValue placeholder="Selecione o Papel" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    {roles.map((role) => (
+                  <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
+                    {roles.filter(r => r.value !== 'brand_owner').map((role) => ( // Brand Owner cannot assign Brand Owner role
                       <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {createPartnerErrors.role && (
+                  <p className="text-red-500 text-xs mt-1">O papel é obrigatório.</p>
+                )}
               </div>
             </div>
+            {/* Optional Name field for display purposes */}
             <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="sm:text-right text-primary-foreground">Email</Label>
+              <Label htmlFor="name" className="sm:text-right text-primary-foreground">Nome (Opcional)</Label>
               <div className="sm:col-span-3">
-                <Input id="email" type="email" value={newPartnerData.email} onChange={handleCreatePartnerInputChange} className={cn("bg-slate-700 border-slate-600", { "border-red-500": createPartnerErrors.email })} placeholder="contato@empresa.com" />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="public_key" className="sm:text-right text-primary-foreground">Chave Pública</Label>
-              <div className="sm:col-span-3">
-                <Input id="public_key" value={newPartnerData.public_key} onChange={handleCreatePartnerInputChange} className={cn("bg-slate-700 border-slate-600", { "border-red-500": createPartnerErrors.public_key })} placeholder="0x..." />
+                <Input id="name" value={newPartnerData.name} onChange={handleCreatePartnerInputChange} className="bg-slate-700 border-slate-600 text-primary-foreground" placeholder="Nome para exibição" />
               </div>
             </div>
           </div>
         </div>
         <div className="flex justify-end mt-6">
-          <Button variant="primary" onClick={handleCreatePartner}>
-            Salvar Parceiro
+          <Button variant="primary" onClick={handleCreatePartner} disabled={isCreatingPartner}>
+            {isCreatingPartner ? (
+              <span className="flex items-center space-x-2">
+                <Loader2 className="h-5 w-5 animate-spin text-primary-foreground" />
+                <span>Atribuindo...</span>
+              </span>
+            ) : (
+              <>
+                <UserPlus className="h-4 w-4 mr-2" />
+                <span>Atribuir Papel</span>
+              </>
+            )}
           </Button>
         </div>
       </Modal>

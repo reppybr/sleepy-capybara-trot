@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
-import adminRoutes from './routes/adminRoutes'; // Import the new admin routes
+import adminRoutes from './routes/adminRoutes';
+import userManagementRoutes from './routes/userManagementRoutes'; // Import the new user management routes
 
 dotenv.config();
 
@@ -41,7 +42,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes); // Use the new admin routes
+app.use('/api/admin', adminRoutes);
+app.use('/api/user-management', userManagementRoutes); // Use the new user management routes
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
