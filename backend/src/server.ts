@@ -3,7 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import adminRoutes from './routes/adminRoutes';
-import userManagementRoutes from './routes/userManagementRoutes'; // Import the new user management routes
+import userManagementRoutes from './routes/userManagementRoutes';
+import userRoutes from './routes/userRoutes'; // Import the new user routes
+import batchRoutes from './routes/batchRoutes'; // Import the new batch routes
+import partnerRoutes from './routes/partnerRoutes'; // Import the new partner routes
 
 dotenv.config();
 
@@ -43,7 +46,10 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/user-management', userManagementRoutes); // Use the new user management routes
+app.use('/api/user-management', userManagementRoutes);
+app.use('/api/users', userRoutes); // Use the new user routes
+app.use('/api/batches', batchRoutes); // Use the new batch routes
+app.use('/api/partners', partnerRoutes); // Use the new partner routes
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
