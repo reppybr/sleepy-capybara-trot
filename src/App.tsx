@@ -18,6 +18,7 @@ import { SupabaseAuthProvider } from "./context/SupabaseAuthContext";
 import { InjectedTaskProvider } from "./context/InjectedTaskContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import LandingPage from "./pages/LandingPage";
+import Admin from "./pages/Admin"; // Import the new Admin page
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/admin" element={<Admin />} /> {/* New Admin Route */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
