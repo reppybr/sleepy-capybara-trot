@@ -158,3 +158,4 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
