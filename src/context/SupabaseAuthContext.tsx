@@ -38,25 +38,25 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
     const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
       console.log('SupabaseAuthContext: START Fetching user profile for:', supabaseUser.id);
       try {
-        console.log('SupabaseAuthContext: Before Supabase query for user profile.');
+        console.log('SupabaseAuthContext: Before Supabase query for user profile. User ID:', supabaseUser.id);
         const { data, error } = await supabase
           .from('users')
           .select('auth_user_id, name, email, public_key, role, is_profile_complete')
-          .eq('auth_user_id', supabaseUser.id)
-          .single(); // Usando .single() para esperar uma ou zero linhas
-        console.log('SupabaseAuthContext: After Supabase query. Data:', data, 'Error:', error);
+          .eq('auth_user_id', supabaseUser.id); // Removido .single()
+        console.log('SupabaseAuthContext: After Supabase query. Raw Data:', data, 'Raw Error:', error);
 
         if (error) {
-          if (error.code === 'PGRST116') { // Código para 'nenhuma linha encontrada'
-            console.warn("SupabaseAuthContext: No user profile found for auth_user_id:", supabaseUser.id);
-          } else {
-            console.error("SupabaseAuthContext: Error fetching user profile:", error);
-          }
+          console.error("SupabaseAuthContext: Error fetching user profile:", error);
           return null;
         }
         
-        console.log('SupabaseAuthContext: User profile fetched:', data); // data será o objeto único se bem-sucedido
-        return data as UserProfile;
+        if (data && data.length > 0) {
+          console.log('SupabaseAuthContext: User profile fetched:', data[0]);
+          return data[0] as UserProfile; // Pegar o primeiro resultado
+        } else {
+          console.warn("SupabaseAuthContext: No user profile found for auth_user_id:", supabaseUser.id);
+          return null;
+        }
       } catch (fetchProfileError) {
         console.error("SupabaseAuthContext: Unexpected error in fetchUserProfile:", fetchProfileError);
         return null;
@@ -133,7 +133,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         currentProfile = null; // Ensure profile is cleared on unhandled error
       } finally {
         if (isMounted) {
-          console.log('SupabaseAuthContext: Finalizing auth state. currentProfile:', currentProfile); // NOVO LOG
+          console.log('SupabaseAuthContext: Finalizing auth state. currentProfile:', currentProfile);
           setProfile(currentProfile); // Update profile state once at the end
           setLoading(false); // Always set loading to false at the very end
           console.log('SupabaseAuthContext: setLoading(false) called.');
