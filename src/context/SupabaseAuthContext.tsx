@@ -35,30 +35,29 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
   useEffect(() => {
     let isMounted = true;
 
+    // Function to fetch user profile directly from Supabase (used for INITIAL_SESSION)
     const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
-      console.log('SupabaseAuthContext: START Fetching user profile for:', supabaseUser.id);
+      console.log('SupabaseAuthContext: START Fetching user profile directly from Supabase for:', supabaseUser.id);
       try {
-        console.log('SupabaseAuthContext: Before Supabase query for user profile. User ID:', supabaseUser.id);
         const { data, error } = await supabase
           .from('users')
           .select('auth_user_id, name, email, public_key, role, is_profile_complete')
-          .eq('auth_user_id', supabaseUser.id); // Removido .single()
-        console.log('SupabaseAuthContext: After Supabase query. Raw Data:', data, 'Raw Error:', error);
-
+          .eq('auth_user_id', supabaseUser.id); 
+        
         if (error) {
-          console.error("SupabaseAuthContext: Error fetching user profile:", error);
+          console.error("SupabaseAuthContext: Error fetching user profile directly:", error);
           return null;
         }
         
         if (data && data.length > 0) {
-          console.log('SupabaseAuthContext: User profile fetched:', data[0]);
-          return data[0] as UserProfile; // Pegar o primeiro resultado
+          console.log('SupabaseAuthContext: User profile fetched directly:', data[0]);
+          return data[0] as UserProfile;
         } else {
-          console.warn("SupabaseAuthContext: No user profile found for auth_user_id:", supabaseUser.id);
+          console.warn("SupabaseAuthContext: No user profile found directly for auth_user_id:", supabaseUser.id);
           return null;
         }
       } catch (fetchProfileError) {
-        console.error("SupabaseAuthContext: Unexpected error in fetchUserProfile:", fetchProfileError);
+        console.error("SupabaseAuthContext: Unexpected error in fetchUserProfile (direct):", fetchProfileError);
         return null;
       }
     };
@@ -93,7 +92,10 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
               const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido do backend' }));
               throw new Error(`Falha ao sincronizar usuário com o backend: ${errorData.message || response.statusText}`);
             }
-            console.log('SupabaseAuthContext: Backend sync successful.');
+            const backendSyncData = await response.json();
+            console.log('SupabaseAuthContext: Backend sync successful. Returned user:', backendSyncData.user);
+            currentProfile = backendSyncData.user as UserProfile; // Use data from backend sync
+
           } catch (fetchError: any) {
             clearTimeout(id);
             if (fetchError.name === 'AbortError') {
@@ -104,13 +106,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
               toast.error(`Sincronização com o backend falhou: ${fetchError.message}.`);
             }
             await supabase.auth.signOut(); // Force sign out on backend sync failure
-            // Do NOT return here, let the finally block handle setLoading(false)
-          }
-
-          // Fetch profile after potential backend sync (or if sync failed and user was signed out)
-          // Check if session.user is still valid after potential signOut
-          if (session.user) { 
-            currentProfile = await fetchUserProfile(session.user);
+            // currentProfile remains null here, which is correct
           }
 
         } else if (_event === 'SIGNED_OUT') {
@@ -119,7 +115,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
           navigate('/login');
 
         } else if (session) { // Handles 'INITIAL_SESSION' and other events where session exists
-          console.log('SupabaseAuthContext: Session exists (e.g., INITIAL_SESSION). Fetching profile.');
+          console.log('SupabaseAuthContext: Session exists (e.g., INITIAL_SESSION). Fetching profile directly.');
           currentProfile = await fetchUserProfile(session.user);
 
         } else { // No session (e.g., after SIGNED_OUT, or initial load without session)
