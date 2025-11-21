@@ -7,19 +7,23 @@ import { Label } from '@/components/ui/label';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
-import { Lock, User, Mail, PlusCircle, LogIn } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Lock, User, Mail, PlusCircle, LogIn, Wallet, Check } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from '@/lib/utils';
 
 const Admin: React.FC = () => {
   const navigate = useNavigate();
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [brandOwnerEmail, setBrandOwnerEmail] = useState('');
+  const [identifier, setIdentifier] = useState(''); // Can be email or public key
+  const [addMethod, setAddMethod] = useState<'email' | 'publicKey'>('email');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    // This is a mock admin login for demonstration purposes.
+    // In a real application, this would involve secure authentication.
     if (username === 'admin' && password === 'admin') {
       setIsAdminLoggedIn(true);
       toast.success("Login de administrador bem-sucedido!");
@@ -28,49 +32,37 @@ const Admin: React.FC = () => {
     }
   };
 
-  const handleAddBrandOwner = async (e: React.FormEvent) => {
+  const handleAssignBrandOwner = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!brandOwnerEmail.trim() || !/\S+@\S+\.\S+/.test(brandOwnerEmail)) {
+    if (!identifier.trim()) {
+      toast.error(`Por favor, insira um ${addMethod === 'email' ? 'email' : 'chave pública'} válido.`);
+      return;
+    }
+    if (addMethod === 'email' && !/\S+@\S+\.\S+/.test(identifier)) {
       toast.error("Por favor, insira um email válido.");
       return;
     }
 
     setIsSubmitting(true);
-    toast.loading("Atribuindo papel de Brand Owner...", { id: "add-brand-owner" });
+    toast.loading("Atribuindo papel de Brand Owner...", { id: "assign-role" });
 
     try {
-      // 1. Find the user in the public.users table by email
-      const { data: existingUsers, error: fetchError } = await supabase
-        .from('users')
-        .select('auth_user_id, email')
-        .eq('email', brandOwnerEmail);
+      const response = await fetch('https://sleepy-capybara-trot.onrender.com/api/admin/assign-brand-owner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, method: addMethod }),
+      });
 
-      if (fetchError) {
-        throw fetchError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao atribuir o papel.');
       }
 
-      if (!existingUsers || existingUsers.length === 0) {
-        toast.error("Usuário não encontrado. Certifique-se de que o usuário já se registrou no sistema.", { id: "add-brand-owner" });
-        return;
-      }
-
-      const userToUpdate = existingUsers[0];
-
-      // 2. Update the user's role to 'brand_owner' and set is_profile_complete to false
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ role: 'brand_owner', is_profile_complete: false })
-        .eq('auth_user_id', userToUpdate.auth_user_id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      toast.success(`O usuário ${brandOwnerEmail} agora é um Brand Owner!`, { id: "add-brand-owner" });
-      setBrandOwnerEmail(''); // Clear the input
+      toast.success(`O usuário ${identifier} agora é um Brand Owner!`, { id: "assign-role" });
+      setIdentifier(''); // Clear the input
     } catch (error: any) {
-      toast.error(error.message || "Falha ao atribuir o papel. Tente novamente.", { id: "add-brand-owner" });
-      console.error("Error adding brand owner:", error);
+      toast.error(error.message || "Falha ao atribuir o papel. Tente novamente.", { id: "assign-role" });
+      console.error("Error assigning brand owner:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -128,26 +120,57 @@ const Admin: React.FC = () => {
           <p className="text-muted-foreground">Gerencie os papéis dos usuários na plataforma.</p>
         </div>
 
-        <form onSubmit={handleAddBrandOwner} className="space-y-6">
+        <form onSubmit={handleAssignBrandOwner} className="space-y-6">
           <h2 className="text-xl font-semibold text-primary-foreground flex items-center gap-2">
             <PlusCircle className="h-5 w-5 text-primary" /> Atribuir Papel de Brand Owner
           </h2>
           <p className="text-muted-foreground text-sm">
-            Insira o email de um usuário existente para atribuir a ele o papel de "Brand Owner".
+            Insira o identificador de um usuário existente para atribuir a ele o papel de "Brand Owner".
             O usuário precisará fazer login novamente para que a mudança seja aplicada.
           </p>
-          <div className="grid gap-2">
-            <Label htmlFor="brandOwnerEmail">Email do Usuário</Label>
-            <Input
-              id="brandOwnerEmail"
-              type="email"
-              value={brandOwnerEmail}
-              onChange={(e) => setBrandOwnerEmail(e.target.value)}
-              placeholder="email@exemplo.com"
-              className="bg-slate-700 border-slate-600 text-primary-foreground"
-              required
-            />
-          </div>
+
+          <Tabs defaultValue="email" className="w-full" onValueChange={(value) => {
+            setAddMethod(value as 'email' | 'publicKey');
+            setIdentifier(''); // Clear identifier when switching tabs
+          }}>
+            <TabsList className="grid w-full grid-cols-2 bg-card border border-border">
+              <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Mail className="h-4 w-4 mr-2" /> Por Email
+              </TabsTrigger>
+              <TabsTrigger value="publicKey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Wallet className="h-4 w-4 mr-2" /> Por Chave Pública
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="email" className="mt-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email-identifier">Email do Usuário</Label>
+                <Input
+                  id="email-identifier"
+                  type="email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="email@exemplo.com"
+                  className="bg-slate-700 border-slate-600 text-primary-foreground"
+                  required
+                />
+              </div>
+            </TabsContent>
+            <TabsContent value="publicKey" className="mt-4">
+              <div className="grid gap-2">
+                <Label htmlFor="public-key-identifier">Chave Pública do Usuário</Label>
+                <Input
+                  id="public-key-identifier"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="0x..."
+                  className="bg-slate-700 border-slate-600 text-primary-foreground"
+                  required
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
           <Button type="submit" variant="primary" className="w-full flex items-center gap-2" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
@@ -156,7 +179,7 @@ const Admin: React.FC = () => {
               </>
             ) : (
               <>
-                <Mail className="h-4 w-4" /> Atribuir Brand Owner
+                <Check className="h-4 w-4" /> Atribuir Brand Owner
               </>
             )}
           </Button>
