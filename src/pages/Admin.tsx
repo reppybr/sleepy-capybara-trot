@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
-import { Lock, User, Mail, PlusCircle, LogIn, Wallet, Check } from 'lucide-react';
+import { Lock, User, Mail, PlusCircle, LogIn, Wallet, Check, Loader2 } from 'lucide-react'; // Adicionado Loader2
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 
