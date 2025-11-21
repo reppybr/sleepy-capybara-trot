@@ -9,13 +9,12 @@ import Button from '@/components/common/Button';
 import Card from '@/components/common/Card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Loader2, Save, X, CheckCircle } from 'lucide-react'; // Added CheckCircle icon
-import { STAGE_EVENT_SCHEMAS } from '@/constants/stageEventSchemas'; // Import STAGE_EVENT_SCHEMAS from new file
-import { FormField, PartnerRoleKey, FieldOption, PartnerProfileSchema } from '@/types/forms'; // Import types from new file
+import { Loader2, Save, X, CheckCircle } from 'lucide-react';
+import { STAGE_EVENT_SCHEMAS } from '@/constants/stageEventSchemas';
+import { FormField, PartnerRoleKey, FieldOption, PartnerProfileSchema } from '@/types/forms';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 import { registerStage } from '@/api/batchService';
 import Badge from '@/components/common/Badge';
-import { getEnterpriseDataByPublicKey } from '@/api/mockEnterpriseData'; // Import mock enterprise data
 
 interface DynamicStageFormProps {
   batchId: string;
@@ -23,7 +22,6 @@ interface DynamicStageFormProps {
   onStageAdded: () => void;
 }
 
-// Helper to get initial form data from schema
 const getInitialFormData = (schema: PartnerProfileSchema | undefined) => {
   const initialData: { [key: string]: any } = {};
   if (!schema) return initialData;
@@ -51,7 +49,7 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
   const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set()); // Track auto-filled fields
+  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
 
   const stageSchema = STAGE_EVENT_SCHEMAS[partnerType];
 
@@ -61,32 +59,28 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       let newFormData = { ...initialData };
       const newAutoFilledFields = new Set<string>();
 
-      if (profile?.public_key) {
-        const enterpriseProfile = getEnterpriseDataByPublicKey(profile.public_key);
-        if (enterpriseProfile && enterpriseProfile.profile_metadata) {
-          const profileData = enterpriseProfile.profile_metadata;
+      if (profile?.profile_metadata) {
+        const profileData = profile.profile_metadata;
 
-          // Function to recursively merge profile data into form data
-          const mergeData = (formFields: FormField[], currentFormData: any, currentProfileData: any, path: string = '') => {
-            formFields.forEach(field => {
-              const fullPath = path ? `${path}.${field.name}` : field.name;
-              if (field.type === 'group' && field.fields && currentProfileData[field.name]) {
-                if (!currentFormData[field.name]) currentFormData[field.name] = {};
-                mergeData(field.fields, currentFormData[field.name], currentProfileData[field.name], fullPath);
-              } else if (currentProfileData[field.name] !== undefined) {
-                currentFormData[field.name] = currentProfileData[field.name];
-                newAutoFilledFields.add(fullPath);
-              }
-            });
-          };
+        const mergeData = (formFields: FormField[], currentFormData: any, currentProfileData: any, path: string = '') => {
+          formFields.forEach(field => {
+            const fullPath = path ? `${path}.${field.name}` : field.name;
+            if (field.type === 'group' && field.fields && currentProfileData[field.name]) {
+              if (!currentFormData[field.name]) currentFormData[field.name] = {};
+              mergeData(field.fields, currentFormData[field.name], currentProfileData[field.name], fullPath);
+            } else if (currentProfileData[field.name] !== undefined) {
+              currentFormData[field.name] = currentProfileData[field.name];
+              newAutoFilledFields.add(fullPath);
+            }
+          });
+        };
 
-          mergeData(stageSchema.fields, newFormData, profileData);
-        }
+        mergeData(stageSchema.fields, newFormData, profileData);
       }
       setFormData(newFormData);
       setAutoFilledFields(newAutoFilledFields);
     }
-  }, [stageSchema, profile?.public_key]);
+  }, [stageSchema, profile?.profile_metadata]);
 
   const handleChange = (fieldName: string, value: any, groupName?: string) => {
     setFormData(prev => {
@@ -101,9 +95,8 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       }
       return { ...prev, [fieldName]: value };
     });
-    setErrors(prev => ({ ...prev, [fieldName]: '' })); // Clear error on change
+    setErrors(prev => ({ ...prev, [fieldName]: '' }));
 
-    // Remove from autoFilledFields if user edits it
     const fullPath = groupName ? `${groupName}.${fieldName}` : fieldName;
     if (autoFilledFields.has(fullPath)) {
       setAutoFilledFields(prev => {
@@ -125,7 +118,6 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
     });
     setErrors(prev => ({ ...prev, [fieldName]: '' }));
 
-    // Remove from autoFilledFields if user edits it
     if (autoFilledFields.has(fieldName)) {
       setAutoFilledFields(prev => {
         const newSet = new Set(prev);
@@ -140,7 +132,6 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
       ...prev,
       [fieldName]: (prev[fieldName] || []).filter((v: string) => v !== itemToRemove),
     }));
-    // Remove from autoFilledFields if user edits it
     if (autoFilledFields.has(fieldName)) {
       setAutoFilledFields(prev => {
         const newSet = new Set(prev);
@@ -183,20 +174,20 @@ export const DynamicStageForm: React.FC<DynamicStageFormProps> = ({ batchId, par
     }
 
     setIsSubmitting(true);
-    toast.loading("Registrando etapa na blockchain...", { id: "register-stage" });
+    toast.loading("Registrando etapa...", { id: "register-stage" });
 
     try {
-      const response = await registerStage(
-        batchId,
-        formData,
-        profile.public_key,
-        profile.name,
-        partnerType, // Use partnerType as stage type
-        stageSchema?.title || 'Etapa Registrada' // Use schema title as stage title
-      );
+      const stagePayload = {
+        stage_name: stageSchema?.title || 'Etapa Registrada',
+        partner_type: partnerType,
+        metadata: formData,
+        // ipfs_cid and transaction_signature would be added here if generated
+      };
 
-      toast.success(response.message, { id: "register-stage" });
-      onStageAdded(); // Notify parent component that stage was added
+      await registerStage(batchId, stagePayload);
+
+      toast.success("Etapa registrada com sucesso!", { id: "register-stage" });
+      onStageAdded();
     } catch (error: any) {
       toast.error(error.message || "Falha ao registrar a etapa. Tente novamente.", { id: "register-stage" });
       console.error("Error registering stage:", error);

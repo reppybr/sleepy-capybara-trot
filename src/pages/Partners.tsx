@@ -9,126 +9,51 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, User, Users, Building2, Mail, KeyRound, ExternalLink, Edit, Trash2, UserPlus, Check, X, Clock, Loader2 } from 'lucide-react';
+import { Plus, User, Users, Building2, Mail, KeyRound, ExternalLink, UserPlus, Check, X, Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { roles } from '@/constants/roles';
-import { PartnerRole, Partner } from '@/hooks/use-partners'; // Import Partner interface
-import { useSupabaseAuth } from '@/context/SupabaseAuthContext'; // Corrigido o import
-
-// Mock data for partners
-const mockPartnersInitial: Partner[] = [
-  { id: 'p1', name: 'Café do Sol Ltda.', role: 'producer', email: 'contato@cafedosol.com', public_key: '0xabc...123' },
-  { id: 'p2', name: 'Logística Rápida S.A.', role: 'logistics', email: 'info@lograpida.com', public_key: '0xdef...456' },
-  { id: 'p3', name: 'Torrefação Aroma Fino', role: 'roaster', email: 'vendas@aromafino.com', public_key: '0xghi...789' },
-];
-
-// Mock data for connection requests
-interface ConnectionRequest {
-  id: string;
-  senderName: string;
-  senderPublicKey: string;
-  senderRole: PartnerRole;
-  timestamp: string;
-  message?: string;
-}
-
-const mockConnectionRequestsInitial: ConnectionRequest[] = [
-  {
-    id: 'req-001',
-    senderName: 'Fazenda Verde Vale',
-    senderPublicKey: '0xmnp...345',
-    senderRole: 'producer',
-    timestamp: '2024-11-20T10:00:00Z',
-    message: 'Gostaríamos de conectar para futuras parcerias de fornecimento.',
-  },
-  {
-    id: 'req-002',
-    senderName: 'Armazém Central',
-    senderPublicKey: '0xopq...678',
-    senderRole: 'warehouse',
-    timestamp: '2024-11-19T15:30:00Z',
-    message: 'Temos interesse em oferecer nossos serviços de armazenagem.',
-  },
-];
-
-// Mock data for sent requests
-interface SentRequest {
-  id: string;
-  recipientName: string;
-  recipientPublicKey: string;
-  recipientRole: PartnerRole;
-  timestamp: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  message?: string;
-}
-
-const mockSentRequestsInitial: SentRequest[] = [
-  {
-    id: 'sent-001',
-    recipientName: 'Distribuidora Grão Nobre',
-    recipientPublicKey: '0xjkl...012',
-    recipientRole: 'distributor',
-    timestamp: '2024-11-18T11:00:00Z',
-    status: 'pending',
-    message: 'Olá, estamos expandindo nossa rede de distribuição.',
-  },
-];
+import { PartnerRole, Partner } from '@/hooks/use-partners';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMyPartners, getConnectionRequests, createConnectionRequest, updateConnectionRequestStatus } from '@/api/partnerService';
+import { assignUserRole } from '@/api/userService';
 
 const Partners: React.FC = () => {
   const isMobile = useIsMobile();
-  const { profile: user } = useSupabaseAuth(); // Usando useSupabaseAuth
-  const [partners, setPartners] = React.useState<Partner[]>(mockPartnersInitial);
-  const [connectionRequests, setConnectionRequests] = React.useState<ConnectionRequest[]>(mockConnectionRequestsInitial);
-  const [sentRequests, setSentRequests] = React.useState<SentRequest[]>(mockSentRequestsInitial);
+  const queryClient = useQueryClient();
+  const { profile: user } = useSupabaseAuth();
 
-  // State for "Send Request" modal (for non-brand-owners)
-  const [isSendRequestModalOpen, setIsSendRequestModalOpen] = React.useState(false);
-  const [newRequestData, setNewRequestData] = React.useState({
-    recipientIdentifier: '',
-    addMethod: 'publicKey' as 'publicKey' | 'email',
-    message: '',
+  // --- Data Fetching using React Query ---
+  const { data: partners = [], isLoading: isLoadingPartners } = useQuery({
+    queryKey: ['myPartners'],
+    queryFn: getMyPartners,
+    enabled: !!user,
   });
-  const [sendRequestErrors, setSendRequestErrors] = React.useState<{ [key: string]: boolean }>({});
 
-  // State for "Create Partner" modal (for brand-owners)
-  const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = React.useState(false);
-  const [newPartnerData, setNewPartnerData] = React.useState({
-    identifier: '', // Can be public_key or email
-    identifierMethod: 'publicKey' as 'publicKey' | 'email',
-    role: '' as PartnerRole,
-    name: '', // Optional, for display purposes or to update user's name
+  const { data: incomingRequests = [], isLoading: isLoadingIncoming } = useQuery({
+    queryKey: ['connectionRequests', 'incoming'],
+    queryFn: () => getConnectionRequests('incoming'),
+    enabled: !!user,
   });
-  const [createPartnerErrors, setCreatePartnerErrors] = React.useState<{ [key: string]: boolean }>({});
-  const [isCreatingPartner, setIsCreatingPartner] = useState(false);
 
-
-  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = React.useState(false);
-  const [partnerToDelete, setPartnerToDelete] = React.useState<Partner | null>(null);
-
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
-  const [partnerToEdit, setPartnerToEdit] = React.useState<Partner | null>(null);
-  const [editedPartnerData, setEditedPartnerData] = React.useState({
-    id: '',
-    companyName: '',
-    publicKey: '',
-    role: '' as PartnerRole,
-    email: '',
+  const { data: sentRequests = [], isLoading: isLoadingSent } = useQuery({
+    queryKey: ['connectionRequests', 'sent'],
+    queryFn: () => getConnectionRequests('sent'),
+    enabled: !!user,
   });
-  const [editErrors, setEditErrors] = React.useState<{ [key: string]: boolean }>({});
+
+  // --- State for Modals ---
+  const [isSendRequestModalOpen, setIsSendRequestModalOpen] = useState(false);
+  const [isCreatePartnerModalOpen, setIsCreatePartnerModalOpen] = useState(false);
+
+  // --- State for Forms ---
+  const [newRequestData, setNewRequestData] = useState({ recipient_public_key: '', message: '' });
+  const [newPartnerData, setNewPartnerData] = useState({ identifier: '', identifierMethod: 'publicKey' as 'publicKey' | 'email', role: '' as PartnerRole, name: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getRoleLabel = (roleValue: PartnerRole) => {
     const role = roles.find(r => r.value === roleValue);
@@ -143,226 +68,77 @@ const Partners: React.FC = () => {
     }
   };
 
-  // --- Create Partner Logic (Brand Owner) ---
-  const handleCreatePartnerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setNewPartnerData(prev => ({ ...prev, [id]: value }));
-    setCreatePartnerErrors(prev => ({ ...prev, [id]: false }));
-  };
-
-  const handleCreatePartnerSelectChange = (value: PartnerRole) => {
-    setNewPartnerData(prev => ({ ...prev, role: value }));
-    setCreatePartnerErrors(prev => ({ ...prev, role: false }));
-  };
-
-  const handleCreatePartnerIdentifierMethodChange = (value: 'publicKey' | 'email') => {
-    setNewPartnerData(prev => ({ ...prev, identifierMethod: value, identifier: '' }));
-    setCreatePartnerErrors({});
-  };
-
-  const validateCreatePartnerForm = () => {
-    const newErrors: { [key: string]: boolean } = {};
-    if (!newPartnerData.identifier.trim()) newErrors.identifier = true;
-    if (newPartnerData.identifierMethod === 'email' && !/\S+@\S+\.\S+/.test(newPartnerData.identifier)) newErrors.identifier = true;
-    if (!newPartnerData.role) newErrors.role = true;
-    setCreatePartnerErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleCreatePartner = async () => {
-    if (!validateCreatePartnerForm()) {
-      toast.error("Por favor, preencha todos os campos obrigatórios corretamente.");
-      return;
-    }
-
-    setIsCreatingPartner(true);
-    toast.loading("Atribuindo papel ao parceiro...", { id: "assign-partner-role" });
-
-    try {
-      const response = await fetch('https://sleepy-capybara-trot.onrender.com/api/user-management/assign-role', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identifier: newPartnerData.identifier,
-          method: newPartnerData.identifierMethod,
-          role: newPartnerData.role,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Falha ao atribuir o papel ao parceiro.');
-      }
-
-      const result = await response.json();
-      const assignedPartner: Partner = {
-        id: result.user.id, // Use the ID returned from the backend
-        name: result.user.name || newPartnerData.name || result.user.email, // Use name from backend, or provided name, or email
-        role: result.user.role,
-        email: result.user.email,
-        public_key: result.user.public_key,
-      };
-
-      setPartners(prev => {
-        // Check if partner already exists in the local list (e.g., if role was just updated)
-        if (prev.some(p => p.public_key === assignedPartner.public_key)) {
-          return prev.map(p => p.public_key === assignedPartner.public_key ? assignedPartner : p);
-        }
-        return [...prev, assignedPartner];
-      });
-      toast.success(`Parceiro "${assignedPartner.name}" agora é um ${getRoleLabel(assignedPartner.role)}!`, { id: "assign-partner-role" });
+  // --- Mutations ---
+  const assignRoleMutation = useMutation({
+    mutationFn: assignUserRole,
+    onSuccess: (data) => {
+      toast.success(`Parceiro "${data.user.name}" agora é um ${getRoleLabel(data.user.role as PartnerRole)}!`);
+      queryClient.invalidateQueries({ queryKey: ['myPartners'] });
       setIsCreatePartnerModalOpen(false);
       setNewPartnerData({ identifier: '', identifierMethod: 'publicKey', role: '' as PartnerRole, name: '' });
-      setCreatePartnerErrors({});
-    } catch (error: any) {
-      toast.error(error.message || "Falha ao atribuir o papel ao parceiro. Tente novamente.", { id: "assign-partner-role" });
-      console.error("Error assigning partner role:", error);
-    } finally {
-      setIsCreatingPartner(false);
-    }
-  };
+    },
+    onError: (error: Error) => {
+      toast.error(`Falha ao atribuir papel: ${error.message}`);
+    },
+    onSettled: () => setIsSubmitting(false),
+  });
 
-  // --- Send Connection Request Logic ---
-  const handleSendRequestInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setNewRequestData((prev) => ({ ...prev, [id]: value }));
-    setSendRequestErrors((prev) => ({ ...prev, [id]: false }));
-  };
+  const sendRequestMutation = useMutation({
+    mutationFn: createConnectionRequest,
+    onSuccess: () => {
+      toast.success("Solicitação de conexão enviada com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ['connectionRequests', 'sent'] });
+      setIsSendRequestModalOpen(false);
+      setNewRequestData({ recipient_public_key: '', message: '' });
+    },
+    onError: (error: Error) => {
+      toast.error(`Falha ao enviar solicitação: ${error.message}`);
+    },
+    onSettled: () => setIsSubmitting(false),
+  });
 
-  const handleSendRequestMethodChange = (value: 'publicKey' | 'email') => {
-    setNewRequestData((prev) => ({ ...prev, addMethod: value, recipientIdentifier: '' }));
-    setSendRequestErrors({});
-  };
+  const updateRequestMutation = useMutation({
+    mutationFn: updateConnectionRequestStatus,
+    onSuccess: (_, variables) => {
+      toast.success(`Solicitação ${variables.status === 'accepted' ? 'aceita' : 'rejeitada'}!`);
+      queryClient.invalidateQueries({ queryKey: ['connectionRequests', 'incoming'] });
+      queryClient.invalidateQueries({ queryKey: ['myPartners'] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Falha ao processar solicitação: ${error.message}`);
+    },
+  });
 
-  const validateSendRequestForm = () => {
-    const newErrors: { [key: string]: boolean } = {};
-    if (!newRequestData.recipientIdentifier.trim()) {
-      newErrors.recipientIdentifier = true;
-    }
-    setSendRequestErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSendConnectionRequest = () => {
-    if (!validateSendRequestForm()) {
-      toast.error("Por favor, preencha o identificador do parceiro.");
+  // --- Form Handlers ---
+  const handleCreatePartner = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPartnerData.identifier.trim() || !newPartnerData.role) {
+      toast.error("Por favor, preencha o identificador e o papel do parceiro.");
       return;
     }
-    const newSentRequest: SentRequest = {
-      id: `sent-${Date.now()}`,
-      recipientName: `Parceiro ${newRequestData.recipientIdentifier.substring(0, 8)}...`,
-      recipientPublicKey: newRequestData.recipientIdentifier,
-      recipientRole: 'unknown' as PartnerRole,
-      timestamp: new Date().toISOString(),
-      status: 'pending',
-      message: newRequestData.message,
-    };
-    setSentRequests((prev) => [...prev, newSentRequest]);
-    toast.success("Solicitação de conexão enviada com sucesso!");
-    setIsSendRequestModalOpen(false);
-    setNewRequestData({ recipientIdentifier: '', addMethod: 'publicKey', message: '' });
-    setSendRequestErrors({});
-  };
-
-  // --- Handle Incoming Requests Logic ---
-  const handleAcceptRequest = (request: ConnectionRequest) => {
-    const newPartner: Partner = {
-      id: `p${Date.now()}`,
-      name: request.senderName,
-      role: request.senderRole,
-      email: 'mock@email.com',
-      public_key: request.senderPublicKey,
-    };
-    setPartners((prev) => [...prev, newPartner]);
-    setConnectionRequests((prev) => prev.filter((req) => req.id !== request.id));
-    toast.success(`Conexão com "${request.senderName}" aceita!`);
-    setSentRequests(prev => prev.map(sr => sr.recipientPublicKey === request.senderPublicKey ? { ...sr, status: 'accepted' } : sr));
-  };
-
-  const handleRejectRequest = (requestId: string) => {
-    setConnectionRequests((prev) => prev.filter((req) => req.id !== requestId));
-    toast.info("Solicitação de conexão rejeitada.");
-  };
-
-  // --- Delete Partner Logic ---
-  const handleDeleteClick = (partner: Partner) => {
-    setPartnerToDelete(partner);
-    setIsDeleteConfirmModalOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (partnerToDelete) {
-      setPartners((prev) => prev.filter((p) => p.id !== partnerToDelete.id));
-      toast.success(`Parceiro "${partnerToDelete.name}" excluído com sucesso!`);
-      setPartnerToDelete(null);
-      setIsDeleteConfirmModalOpen(false);
-    }
-  };
-
-  // --- Edit Partner Logic ---
-  const handleEditClick = (partner: Partner) => {
-    setPartnerToEdit(partner);
-    setEditedPartnerData({
-      id: partner.id,
-      companyName: partner.name,
-      publicKey: partner.public_key,
-      role: partner.role,
-      email: partner.email,
+    setIsSubmitting(true);
+    assignRoleMutation.mutate({
+      identifier: newPartnerData.identifier,
+      method: newPartnerData.identifierMethod,
+      role: newPartnerData.role,
     });
-    setIsEditModalOpen(true);
   };
 
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setEditedPartnerData((prev) => ({ ...prev, [id]: value }));
-    setEditErrors((prev) => ({ ...prev, [id]: false }));
-  };
-
-  const handleEditSelectChange = (value: PartnerRole) => {
-    setEditedPartnerData((prev) => ({ ...prev, role: value }));
-    setEditErrors((prev) => ({ ...prev, role: false }));
-  };
-
-  const validateEditForm = () => {
-    const newErrors: { [key: string]: boolean } = {};
-    if (!editedPartnerData.companyName) newErrors.companyName = true;
-    if (!editedPartnerData.role) newErrors.role = true;
-    if (!editedPartnerData.publicKey && !editedPartnerData.email) {
-      newErrors.publicKey = true;
-      newErrors.email = true;
-    }
-    setEditErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSaveEdit = () => {
-    if (!validateEditForm()) {
-      toast.error("Por favor, preencha todos os campos obrigatórios.");
+  const handleSendConnectionRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRequestData.recipient_public_key.trim()) {
+      toast.error("Por favor, preencha a chave pública do destinatário.");
       return;
     }
-    setPartners((prev) =>
-      prev.map((p) =>
-        p.id === editedPartnerData.id
-          ? {
-              ...p,
-              name: editedPartnerData.companyName,
-              role: editedPartnerData.role,
-              email: editedPartnerData.email,
-              public_key: editedPartnerData.publicKey,
-            }
-          : p
-      )
-    );
-    toast.success(`Parceiro "${editedPartnerData.companyName}" atualizado com sucesso!`);
-    setIsEditModalOpen(false);
-    setPartnerToEdit(null);
-    setEditedPartnerData({ id: '', companyName: '', publicKey: '', role: '' as PartnerRole, email: '' });
-    setEditErrors({});
+    setIsSubmitting(true);
+    sendRequestMutation.mutate(newRequestData);
   };
 
-  const handleViewProfileClick = (partnerName: string) => {
-    toast.info(`Visualizando perfil de ${partnerName}`);
+  const handleUpdateRequest = (id: string, status: 'accepted' | 'rejected') => {
+    updateRequestMutation.mutate({ id, status });
   };
+
+  const isLoading = isLoadingPartners || isLoadingIncoming || isLoadingSent;
 
   return (
     <div className="space-y-8 py-8">
@@ -374,513 +150,131 @@ const Partners: React.FC = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="myNetwork" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-card border border-border">
-          <TabsTrigger value="myNetwork" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Users className="h-4 w-4 mr-2" /> Minha Rede ({partners.length})
-          </TabsTrigger>
-          <TabsTrigger value="incomingRequests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Plus className="h-4 w-4 mr-2" /> Solicitações Recebidas ({connectionRequests.length})
-          </TabsTrigger>
-          <TabsTrigger value="sentRequests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Clock className="h-4 w-4 mr-2" /> Solicitações Enviadas ({sentRequests.length})
-          </TabsTrigger>
-        </TabsList>
+      {isLoading ? (
+        <div className="flex justify-center items-center p-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <Tabs defaultValue="myNetwork" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-card border border-border">
+            <TabsTrigger value="myNetwork" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Users className="h-4 w-4 mr-2" /> Minha Rede ({partners.length})
+            </TabsTrigger>
+            <TabsTrigger value="incomingRequests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Plus className="h-4 w-4 mr-2" /> Recebidas ({incomingRequests.length})
+            </TabsTrigger>
+            <TabsTrigger value="sentRequests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Clock className="h-4 w-4 mr-2" /> Enviadas ({sentRequests.length})
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Tab Content: Minha Rede */}
-        <TabsContent value="myNetwork" className="mt-6">
-          {partners.length > 0 ? (
-            isMobile ? (
-              <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {partners.map((partner) => (
-                  <Card key={partner.id} className="p-6 flex flex-col items-center text-center space-y-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                        {partner.name.split(' ').map((n) => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <h3 className="text-xl font-semibold text-primary-foreground">{partner.name}</h3>
-                    <p className="text-muted-foreground">{getRoleLabel(partner.role)}</p>
-                    <div className="flex space-x-2 mt-4">
-                      <Button variant="secondary" size="sm" onClick={() => handleEditClick(partner)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => handleDeleteClick(partner)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleViewProfileClick(partner.name)}>
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </section>
-            ) : (
-              <section>
+          <TabsContent value="myNetwork" className="mt-6">
+            {partners.length > 0 ? (
+              isMobile ? (
+                <section className="grid grid-cols-1 gap-6">
+                  {partners.map((partner) => (
+                    <Card key={partner.id} className="p-6 flex flex-col items-center text-center space-y-4">
+                      <Avatar className="h-16 w-16"><AvatarFallback className="bg-primary text-primary-foreground text-xl">{partner.name.split(' ').map((n) => n[0]).join('')}</AvatarFallback></Avatar>
+                      <h3 className="text-xl font-semibold text-primary-foreground">{partner.name}</h3>
+                      <p className="text-muted-foreground">{getRoleLabel(partner.role)}</p>
+                    </Card>
+                  ))}
+                </section>
+              ) : (
                 <Card className="p-0 bg-slate-800/60 backdrop-blur-md border border-slate-700">
                   <Table>
-                    <TableHeader className="bg-slate-900/50">
-                      <TableRow>
-                        <TableHead className="uppercase text-xs tracking-wider text-slate-400">Empresa</TableHead>
-                        <TableHead className="uppercase text-xs tracking-wider text-slate-400">Papel</TableHead>
-                        <TableHead className="uppercase text-xs tracking-wider text-slate-400">Email</TableHead>
-                        <TableHead className="uppercase text-xs tracking-wider text-slate-400">Chave Pública</TableHead>
-                        <TableHead className="uppercase text-xs tracking-wider text-slate-400 text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                    <TableHeader className="bg-slate-900/50"><TableRow><TableHead>Empresa</TableHead><TableHead>Papel</TableHead><TableHead>Email</TableHead><TableHead>Chave Pública</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {partners.map((partner) => (
-                        <TableRow
-                          key={partner.id}
-                          className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors"
-                        >
+                        <TableRow key={partner.id} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
                           <TableCell className="font-medium text-primary-foreground">{partner.name}</TableCell>
                           <TableCell className="text-slate-400">{getRoleLabel(partner.role)}</TableCell>
                           <TableCell className="text-slate-400">{partner.email}</TableCell>
                           <TableCell className="font-mono text-slate-300">{partner.public_key}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end space-x-2">
-                              <Button variant="ghost" size="icon" onClick={() => handleViewProfileClick(partner.name)} className="hover:bg-slate-700">
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleEditClick(partner)} className="text-blue-400 hover:bg-slate-700">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(partner)} className="text-red-400 hover:bg-red-900/20">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </Card>
-              </section>
-            )
-          ) : (
-            <Card className="p-8 text-center flex flex-col items-center justify-center space-y-4 bg-slate-800/60 backdrop-blur-md border border-slate-700">
-              <Users className="h-20 w-20 text-slate-600" />
-              <h3 className="text-xl font-semibold text-primary-foreground">Sua rede de parceiros está vazia.</h3>
-              <p className="text-muted-foreground max-w-md">
-                Comece a construir sua rede enviando uma solicitação de conexão.
-              </p>
-              <Button variant="primary" onClick={handleConnectClick} className="flex items-center space-x-2 mt-4">
-                <UserPlus className="h-4 w-4" />
-                <span>Conectar com Parceiro</span>
-              </Button>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Tab Content: Solicitações Recebidas */}
-        <TabsContent value="incomingRequests" className="mt-6">
-          {connectionRequests.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {connectionRequests.map((request) => (
-                <Card key={request.id} className="p-6 space-y-4 bg-slate-800/60 backdrop-blur-md border border-slate-700">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-blue-500 text-white text-lg">
-                        {request.senderName.split(' ').map((n) => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-lg font-semibold text-primary-foreground">{request.senderName}</h3>
-                      <p className="text-sm text-muted-foreground">{getRoleLabel(request.senderRole)}</p>
-                    </div>
-                  </div>
-                  {request.message && (
-                    <p className="text-sm text-slate-400 italic border-l-2 border-slate-600 pl-3">"{request.message}"</p>
-                  )}
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <Button variant="secondary" size="sm" onClick={() => handleRejectRequest(request.id)}>
-                      <X className="h-4 w-4 mr-2" /> Rejeitar
-                    </Button>
-                    <Button variant="primary" size="sm" onClick={() => handleAcceptRequest(request)}>
-                      <Check className="h-4 w-4 mr-2" /> Aceitar
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="p-8 text-center flex flex-col items-center justify-center space-y-4 bg-slate-800/60 backdrop-blur-md border border-slate-700">
-              <UserPlus className="h-20 w-20 text-slate-600" />
-              <h3 className="text-xl font-semibold text-primary-foreground">Nenhuma solicitação de conexão pendente.</h3>
-              <p className="text-muted-foreground max-w-md">
-                Você está em dia com suas conexões!
-              </p>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Tab Content: Solicitações Enviadas */}
-        <TabsContent value="sentRequests" className="mt-6">
-          {sentRequests.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sentRequests.map((request) => (
-                <Card key={request.id} className="p-6 space-y-4 bg-slate-800/60 backdrop-blur-md border border-slate-700">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-purple-500 text-white text-lg">
-                        {request.recipientName.split(' ').map((n) => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-lg font-semibold text-primary-foreground">{request.recipientName}</h3>
-                      <p className="text-sm text-muted-foreground">{getRoleLabel(request.recipientRole)}</p>
-                    </div>
-                  </div>
-                  {request.message && (
-                    <p className="text-sm text-slate-400 italic border-l-2 border-slate-600 pl-3">"{request.message}"</p>
-                  )}
-                  <div className="flex items-center justify-between mt-4">
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-xs font-semibold",
-                      request.status === 'pending' && "bg-amber-500/20 text-amber-400",
-                      request.status === 'accepted' && "bg-emerald-500/20 text-emerald-400",
-                      request.status === 'rejected' && "bg-red-500/20 text-red-400"
-                    )}>
-                      {request.status === 'pending' && "Pendente"}
-                      {request.status === 'accepted' && "Aceita"}
-                      {request.status === 'rejected' && "Rejeitada"}
-                    </span>
-                    <p className="text-xs text-muted-foreground">
-                      Enviado em: {new Date(request.timestamp).toLocaleDateString()}
-                    </p>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="p-8 text-center flex flex-col items-center justify-center space-y-4 bg-slate-800/60 backdrop-blur-md border border-slate-700">
-              <Clock className="h-20 w-20 text-slate-600" />
-              <h3 className="text-xl font-semibold text-primary-foreground">Nenhuma solicitação de conexão enviada.</h3>
-              <p className="text-muted-foreground max-w-md">
-                Envie uma solicitação para expandir sua rede de parceiros.
-              </p>
-              <Button variant="primary" onClick={handleConnectClick} className="flex items-center space-x-2 mt-4">
-                <UserPlus className="h-4 w-4" />
-                <span>Conectar com Parceiro</span>
-              </Button>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Send Connection Request Modal (for non-brand-owners) */}
-      <Modal
-        open={isSendRequestModalOpen}
-        onOpenChange={setIsSendRequestModalOpen}
-        title="Enviar Solicitação de Conexão"
-        description="Envie uma solicitação para conectar-se com outro parceiro na rede."
-        className="sm:max-w-lg"
-      >
-        <div className="grid gap-6 py-4">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-primary-foreground flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" /> Detalhes do Parceiro
-            </h3>
-            <Tabs defaultValue="publicKey" className="w-full" onValueChange={handleSendRequestMethodChange}>
-              <TabsList className="grid w-full grid-cols-2 bg-card border border-border">
-                <TabsTrigger value="publicKey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <KeyRound className="h-4 w-4 mr-2" /> Chave Pública
-                </TabsTrigger>
-                <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Mail className="h-4 w-4 mr-2" /> Email
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="publicKey" className="mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-                  <Label htmlFor="recipientIdentifier" className="sm:text-right text-primary-foreground">
-                    Chave Pública
-                  </Label>
-                  <div className="sm:col-span-3">
-                    <Input
-                      id="recipientIdentifier"
-                      value={newRequestData.recipientIdentifier}
-                      onChange={handleSendRequestInputChange}
-                      className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": sendRequestErrors.recipientIdentifier })}
-                      placeholder="Chave Pública (Wallet) do Parceiro"
-                    />
-                    {sendRequestErrors.recipientIdentifier && (
-                      <p className="text-red-500 text-xs mt-1">A chave pública é obrigatória.</p>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="email" className="mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-                  <Label htmlFor="recipientIdentifier" className="sm:text-right text-primary-foreground">
-                    Email
-                  </Label>
-                  <div className="sm:col-span-3">
-                    <Input
-                      id="recipientIdentifier"
-                      type="email"
-                      value={newRequestData.recipientIdentifier}
-                      onChange={handleSendRequestInputChange}
-                      className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": sendRequestErrors.recipientIdentifier })}
-                      placeholder="email@parceiro.com"
-                    />
-                    {sendRequestErrors.recipientIdentifier && (
-                      <p className="text-red-500 text-xs mt-1">O email é obrigatório.</p>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-start gap-4">
-              <Label htmlFor="message" className="sm:text-right text-primary-foreground">
-                Mensagem (Opcional)
-              </Label>
-              <div className="sm:col-span-3">
-                <Textarea
-                  id="message"
-                  value={newRequestData.message}
-                  onChange={handleSendRequestInputChange}
-                  className="bg-slate-700 border-slate-600 text-primary-foreground min-h-[80px]"
-                  placeholder="Ex: Olá, gostaríamos de explorar uma parceria..."
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-end mt-6">
-          <Button variant="primary" onClick={handleSendConnectionRequest}>
-            Enviar Solicitação
-          </Button>
-        </div>
-      </Modal>
-
-      {/* Create Partner Modal (for brand-owners) */}
-      <Modal
-        open={isCreatePartnerModalOpen}
-        onOpenChange={setIsCreatePartnerModalOpen}
-        title="Atribuir Papel a Parceiro"
-        description="Atribua um papel a um usuário existente na plataforma. O usuário precisará fazer login novamente para que a mudança seja aplicada."
-        className="sm:max-w-lg"
-      >
-        <div className="grid gap-6 py-4">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-primary-foreground flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" /> Identificador do Usuário
-            </h3>
-            <Tabs defaultValue="publicKey" className="w-full" onValueChange={handleCreatePartnerIdentifierMethodChange}>
-              <TabsList className="grid w-full grid-cols-2 bg-card border border-border">
-                <TabsTrigger value="publicKey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <KeyRound className="h-4 w-4 mr-2" /> Chave Pública
-                </TabsTrigger>
-                <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Mail className="h-4 w-4 mr-2" /> Email
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="publicKey" className="mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-                  <Label htmlFor="identifier" className="sm:text-right text-primary-foreground">
-                    Chave Pública
-                  </Label>
-                  <div className="sm:col-span-3">
-                    <Input
-                      id="identifier"
-                      value={newPartnerData.identifier}
-                      onChange={handleCreatePartnerInputChange}
-                      className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": createPartnerErrors.identifier })}
-                      placeholder="Chave Pública (Wallet) do Parceiro"
-                    />
-                    {createPartnerErrors.identifier && (
-                      <p className="text-red-500 text-xs mt-1">A chave pública é obrigatória.</p>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="email" className="mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-                  <Label htmlFor="identifier" className="sm:text-right text-primary-foreground">
-                    Email
-                  </Label>
-                  <div className="sm:col-span-3">
-                    <Input
-                      id="identifier"
-                      type="email"
-                      value={newPartnerData.identifier}
-                      onChange={handleCreatePartnerInputChange}
-                      className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": createPartnerErrors.identifier })}
-                      placeholder="email@parceiro.com"
-                    />
-                    {createPartnerErrors.identifier && (
-                      <p className="text-red-500 text-xs mt-1">O email é obrigatório.</p>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="sm:text-right text-primary-foreground">Papel a Atribuir</Label>
-              <div className="sm:col-span-3">
-                <Select onValueChange={handleCreatePartnerSelectChange} value={newPartnerData.role}>
-                  <SelectTrigger className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": createPartnerErrors.role })}>
-                    <SelectValue placeholder="Selecione o Papel" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
-                    {roles.filter(r => r.value !== 'brand_owner').map((role) => ( // Brand Owner cannot assign Brand Owner role
-                      <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {createPartnerErrors.role && (
-                  <p className="text-red-500 text-xs mt-1">O papel é obrigatório.</p>
-                )}
-              </div>
-            </div>
-            {/* Optional Name field for display purposes */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="sm:text-right text-primary-foreground">Nome (Opcional)</Label>
-              <div className="sm:col-span-3">
-                <Input id="name" value={newPartnerData.name} onChange={handleCreatePartnerInputChange} className="bg-slate-700 border-slate-600 text-primary-foreground" placeholder="Nome para exibição" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-end mt-6">
-          <Button variant="primary" onClick={handleCreatePartner} disabled={isCreatingPartner}>
-            {isCreatingPartner ? (
-              <span className="flex items-center space-x-2">
-                <Loader2 className="h-5 w-5 animate-spin text-primary-foreground" />
-                <span>Atribuindo...</span>
-              </span>
+              )
             ) : (
-              <>
-                <UserPlus className="h-4 w-4 mr-2" />
-                <span>Atribuir Papel</span>
-              </>
+              <Card className="p-8 text-center flex flex-col items-center justify-center space-y-4"><Users className="h-20 w-20 text-slate-600" /><h3 className="text-xl font-semibold">Sua rede está vazia.</h3><p className="text-muted-foreground">Conecte-se com parceiros para começar.</p></Card>
             )}
-          </Button>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="incomingRequests" className="mt-6">
+            {incomingRequests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {incomingRequests.map((req) => (
+                  <Card key={req.id} className="p-6 space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-12 w-12"><AvatarFallback className="bg-blue-500 text-white">{req.sender.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback></Avatar>
+                      <div>
+                        <h3 className="text-lg font-semibold">{req.sender.name}</h3>
+                        <p className="text-sm text-muted-foreground">{getRoleLabel(req.sender.role as PartnerRole)}</p>
+                      </div>
+                    </div>
+                    {req.message && <p className="text-sm italic border-l-2 pl-3">"{req.message}"</p>}
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="secondary" size="sm" onClick={() => handleUpdateRequest(req.id, 'rejected')}><X className="h-4 w-4 mr-2" /> Rejeitar</Button>
+                      <Button variant="primary" size="sm" onClick={() => handleUpdateRequest(req.id, 'accepted')}><Check className="h-4 w-4 mr-2" /> Aceitar</Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="p-8 text-center"><UserPlus className="h-20 w-20 mx-auto text-slate-600" /><h3 className="text-xl font-semibold mt-4">Nenhuma solicitação pendente.</h3></Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="sentRequests" className="mt-6">
+            {sentRequests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {sentRequests.map((req) => (
+                  <Card key={req.id} className="p-6 space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-12 w-12"><AvatarFallback className="bg-purple-500 text-white">{req.recipient.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback></Avatar>
+                      <div>
+                        <h3 className="text-lg font-semibold">{req.recipient.name}</h3>
+                        <p className="text-sm text-muted-foreground">{getRoleLabel(req.recipient.role as PartnerRole)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={cn("px-3 py-1 rounded-full text-xs", req.status === 'pending' && "bg-amber-500/20 text-amber-400", req.status === 'accepted' && "bg-emerald-500/20 text-emerald-400", req.status === 'rejected' && "bg-red-500/20 text-red-400")}>
+                        {req.status}
+                      </span>
+                      <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="p-8 text-center"><Clock className="h-20 w-20 mx-auto text-slate-600" /><h3 className="text-xl font-semibold mt-4">Nenhuma solicitação enviada.</h3></Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* Modals */}
+      <Modal open={isCreatePartnerModalOpen} onOpenChange={setIsCreatePartnerModalOpen} title="Atribuir Papel a Parceiro" description="Atribua um papel a um usuário existente na plataforma.">
+        <form onSubmit={handleCreatePartner} className="grid gap-6 py-4">
+          <Tabs defaultValue="publicKey" className="w-full" onValueChange={(v) => setNewPartnerData(p => ({...p, identifierMethod: v as 'publicKey' | 'email', identifier: ''}))}>
+            <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="publicKey">Chave Pública</TabsTrigger><TabsTrigger value="email">Email</TabsTrigger></TabsList>
+            <TabsContent value="publicKey" className="mt-4"><Label htmlFor="identifier-pk">Chave Pública</Label><Input id="identifier-pk" value={newPartnerData.identifier} onChange={(e) => setNewPartnerData(p => ({...p, identifier: e.target.value}))} /></TabsContent>
+            <TabsContent value="email" className="mt-4"><Label htmlFor="identifier-email">Email</Label><Input id="identifier-email" type="email" value={newPartnerData.identifier} onChange={(e) => setNewPartnerData(p => ({...p, identifier: e.target.value}))} /></TabsContent>
+          </Tabs>
+          <div><Label htmlFor="role">Papel a Atribuir</Label><Select onValueChange={(v: PartnerRole) => setNewPartnerData(p => ({...p, role: v}))}><SelectTrigger><SelectValue placeholder="Selecione o Papel" /></SelectTrigger><SelectContent>{roles.filter(r => r.value !== 'brand_owner').map(role => <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>)}</SelectContent></Select></div>
+          <div className="flex justify-end mt-6"><Button type="submit" variant="primary" disabled={isSubmitting}>{isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Atribuindo...</> : 'Atribuir Papel'}</Button></div>
+        </form>
       </Modal>
 
-      {/* Edit Partner Modal */}
-      <Modal
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        title={`Editar Parceiro: ${partnerToEdit?.name}`}
-        description="Atualize os detalhes do parceiro."
-        className="sm:max-w-lg"
-      >
-        <div className="grid gap-6 py-4">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-primary-foreground flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" /> Informações da Empresa
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="companyName" className="sm:text-right text-primary-foreground">
-                Nome
-              </Label>
-              <div className="sm:col-span-3">
-                <Input
-                  id="companyName"
-                  value={editedPartnerData.companyName}
-                  onChange={handleEditInputChange}
-                  className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": editErrors.companyName })}
-                  placeholder="Nome da Empresa"
-                />
-                {editErrors.companyName && (
-                  <p className="text-red-500 text-xs mt-1">Nome da empresa é obrigatório.</p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="sm:text-right text-primary-foreground">
-                Papel
-              </Label>
-              <div className="sm:col-span-3">
-                <Select onValueChange={handleEditSelectChange} value={editedPartnerData.role}>
-                  <SelectTrigger className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": editErrors.role })}>
-                    <SelectValue placeholder="Selecione o Papel" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
-                    {roles.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {editErrors.role && (
-                  <p className="text-red-500 text-xs mt-1">O papel é obrigatório.</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-primary-foreground flex items-center gap-2">
-              <KeyRound className="h-5 w-5 text-primary" /> Detalhes de Contato
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="publicKey" className="sm:text-right text-primary-foreground">
-                Chave Pública
-              </Label>
-              <div className="sm:col-span-3">
-                <Input
-                  id="publicKey"
-                  value={editedPartnerData.publicKey}
-                  onChange={handleEditInputChange}
-                  className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": editErrors.publicKey })}
-                  placeholder="Chave Pública (Wallet)"
-                />
-                {editErrors.publicKey && (
-                  <p className="text-red-500 text-xs mt-1">A chave pública é obrigatória.</p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="sm:text-right text-primary-foreground">
-                Email
-              </Label>
-              <div className="sm:col-span-3">
-                <Input
-                  id="email"
-                  type="email"
-                  value={editedPartnerData.email}
-                  onChange={handleEditInputChange}
-                  className={cn("bg-slate-700 border-slate-600 text-primary-foreground", { "border-red-500": editErrors.email })}
-                  placeholder="email@exemplo.com"
-                />
-                {editErrors.email && (
-                  <p className="text-red-500 text-xs mt-1">O email é obrigatório.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-end mt-6">
-          <Button variant="primary" onClick={handleSaveEdit}>
-            Salvar Alterações
-          </Button>
-        </div>
+      <Modal open={isSendRequestModalOpen} onOpenChange={setIsSendRequestModalOpen} title="Enviar Solicitação de Conexão" description="Conecte-se com outro parceiro na rede.">
+        <form onSubmit={handleSendConnectionRequest} className="grid gap-6 py-4">
+          <div><Label htmlFor="recipient_public_key">Chave Pública do Destinatário</Label><Input id="recipient_public_key" value={newRequestData.recipient_public_key} onChange={(e) => setNewRequestData(p => ({...p, recipient_public_key: e.target.value}))} /></div>
+          <div><Label htmlFor="message">Mensagem (Opcional)</Label><Textarea id="message" value={newRequestData.message} onChange={(e) => setNewRequestData(p => ({...p, message: e.target.value}))} /></div>
+          <div className="flex justify-end mt-6"><Button type="submit" variant="primary" disabled={isSubmitting}>{isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Enviando...</> : 'Enviar Solicitação'}</Button></div>
+        </form>
       </Modal>
-
-      {/* Delete Confirmation AlertDialog */}
-      <AlertDialog open={isDeleteConfirmModalOpen} onOpenChange={setIsDeleteConfirmModalOpen}>
-        <AlertDialogContent className="bg-slate-800 border-slate-700">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-primary-foreground">Tem certeza absoluta?</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Esta ação não pode ser desfeita. Isso removerá permanentemente o parceiro{" "}
-              <span className="font-semibold text-primary-foreground">{partnerToDelete?.name}</span> da sua rede.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-slate-600 text-muted-foreground hover:bg-slate-700 hover:text-primary-foreground">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 text-white hover:bg-red-700">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

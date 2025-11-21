@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Users, Trash2, X } from 'lucide-react';
 import { Partner } from '@/hooks/use-partners';
-import { roles } from '@/constants/roles'; // Import roles from new file
+import { roles } from '@/constants/roles';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -25,7 +25,7 @@ interface ParticipantsCardProps {
   participants: { id: string; partner: Partner; joined_at: string }[];
   isOwner: boolean;
   onParticipantRemoved: () => void;
-  batchData: any; // Full batch data to check current holder
+  batchData: any;
 }
 
 const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
@@ -44,6 +44,12 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
   };
 
   const handleRemoveClick = (partner: Partner) => {
+    // This functionality is temporarily disabled as there is no backend endpoint for it.
+    toast.info("A remoção de participantes individuais ainda não é suportada.");
+    return;
+
+    // Kept for future reference when backend supports it
+    /*
     if (partner.public_key === batchData.details.brand_owner_key) {
       toast.error("O dono da marca não pode ser removido da lista de participantes.");
       return;
@@ -54,6 +60,7 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
     }
     setParticipantToRemove(partner);
     setIsDeleteConfirmModalOpen(true);
+    */
   };
 
   const handleConfirmRemove = async () => {
@@ -61,12 +68,11 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
 
     toast.loading(`Removendo ${participantToRemove.name}...`, { id: "remove-participant" });
     try {
-      // Simulate API call to remove participant
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // In a real app, you'd call an API to update the batch participants
+      // API call to remove participant would go here
       console.log(`Simulating removal of participant: ${participantToRemove.name}`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success(`${participantToRemove.name} removido com sucesso!`, { id: "remove-participant" });
-      onParticipantRemoved(); // Trigger refresh of batch data
+      onParticipantRemoved();
       setIsDeleteConfirmModalOpen(false);
       setParticipantToRemove(null);
     } catch (error: any) {
@@ -83,7 +89,7 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {participants.map((bp) => {
           const partner = bp.partner;
-          if (!partner) return null; // Handle cases where partner might be undefined
+          if (!partner) return null;
           const isCurrentHolder = partner.public_key === batchData.details.current_holder_key;
           const isBrandOwner = partner.public_key === batchData.details.brand_owner_key;
 
@@ -115,13 +121,14 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
                   Dono
                 </span>
               )}
-              {isOwner && !isCurrentHolder && !isBrandOwner && (
+              {isOwner && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute top-1 right-1 text-red-400 hover:bg-red-900/20"
+                  className="absolute top-1 right-1 text-red-400 hover:bg-red-900/20 disabled:opacity-25 disabled:cursor-not-allowed"
                   onClick={() => handleRemoveClick(partner)}
-                  title={`Remover ${partner.name}`}
+                  title={`Remover ${partner.name} (desabilitado)`}
+                  disabled={true} // Disabling the button
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -137,13 +144,12 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
             <AlertDialogTitle className="text-primary-foreground">Remover Participante?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
               Tem certeza que deseja remover{" "}
-              <span className="font-semibold text-primary-foreground">{participantToRemove?.name}</span> da cadeia de custódia deste lote?
-              Esta ação não pode ser desfeita.
+              <span className="font-semibold text-primary-foreground">{participantToRemove?.name}</span> da cadeia de custódia?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-slate-600 text-muted-foreground hover:bg-slate-700 hover:text-primary-foreground">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmRemove} className="bg-red-600 text-white hover:bg-red-700">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRemove} className="bg-red-600 hover:bg-red-700">
               Remover
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -151,6 +157,3 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
       </AlertDialog>
     </Card>
   );
-};
-
-export default ParticipantsCard;
