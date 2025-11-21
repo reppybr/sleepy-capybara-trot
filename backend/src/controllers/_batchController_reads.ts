@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { PartnerRoleKey } from '../../src/types/forms'; // Importar o tipo de role
+import { PartnerRoleKey } from '../types/forms'; // Importar o tipo de role
 
 // Assumindo que o req.user é populado por um middleware de autenticação
 interface AuthenticatedRequest extends Request {
@@ -255,7 +255,7 @@ export const transferCustody = async (req: AuthenticatedRequest, res: Response) 
     // 1. Verificar se o usuário é o detentor atual do lote
     const { data: batch, error: batchFetchError } = await supabase
       .from('batches')
-      .select('id, current_holder_key, brand_owner_key')
+      .select('id, current_holder_key, brand_owner_key, onchain_next_stage_index')
       .eq('id', batchId)
       .single();
 
@@ -326,7 +326,7 @@ export const finalizeBatch = async (req: AuthenticatedRequest, res: Response) =>
     // 1. Verificar se o lote pertence ao Brand Owner
     const { data: batch, error: batchFetchError } = await supabase
       .from('batches')
-      .select('id, brand_owner_key')
+      .select('id, brand_owner_key, onchain_next_stage_index')
       .eq('id', batchId)
       .single();
 

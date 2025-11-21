@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { PartnerRoleKey } from '../../src/types/forms'; // Importar o tipo de role
+import { PartnerRoleKey } from '../types/forms'; // Importar o tipo de role
 
 // Assumindo que o req.user é populado por um middleware de autenticação
 interface AuthenticatedRequest extends Request {

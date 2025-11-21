@@ -3,7 +3,7 @@ import { Keypair, PublicKey } from '@solana/web3.js';
 import { supabase } from '../config/supabase';
 import SolanaService from '../services/SolanaService';
 import { decrypt } from '../services/EncryptionService';
-import { PartnerRoleKey } from '../../src/types/forms';
+import { PartnerRoleKey } from '../types/forms';
 
 // This is a temporary solution. Ideally, a middleware would handle user authentication
 // and attach the user object to the request.
