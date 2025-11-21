@@ -1,0 +1,206 @@
+{
+  "version": "0.1.0",
+  "name": "coffee_ledger",
+  "instructions": [
+    {
+      "name": "createBatch",
+      "accounts": [
+        {
+          "name": "batch",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "brandOwner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "producerName",
+          "type": "string"
+        },
+        {
+          "name": "brandId",
+          "type": "string"
+        },
+        {
+          "name": "initialHolderKey",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "addStage",
+      "accounts": [
+        {
+          "name": "batch",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "currentHolder",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "stageName",
+          "type": "string"
+        },
+        {
+          "name": "ipfsCid",
+          "type": "string"
+        },
+        {
+          "name": "partnerType",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "transferCustody",
+      "accounts": [
+        {
+          "name": "batch",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "currentHolder",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "nextHolderKey",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "finalizeBatch",
+      "accounts": [
+        {
+          "name": "batch",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "brandOwner",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Batch",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string"
+          },
+          {
+            "name": "brandId",
+            "type": "string"
+          },
+          {
+            "name": "producerName",
+            "type": "string"
+          },
+          {
+            "name": "brandOwner",
+            "type": "publicKey"
+          },
+          {
+            "name": "currentHolder",
+            "type": "publicKey"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": "BatchStatus"
+            }
+          },
+          {
+            "name": "stages",
+            "type": {
+              "vec": {
+                "defined": "Stage"
+              }
+            }
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "Stage",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "stageName",
+            "type": "string"
+          },
+          {
+            "name": "ipfsCid",
+            "type": "string"
+          },
+          {
+            "name": "addedBy",
+            "type": "publicKey"
+          },
+          {
+            "name": "partnerType",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BatchStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "InProgress"
+          },
+          {
+            "name": "Finalized"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "metadata": {
+    "address": "YOUR_PROGRAM_ID_HERE"
+  }
+}
