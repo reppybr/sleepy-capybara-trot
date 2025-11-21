@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -28,73 +28,79 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true); // Initial state is true
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Memoize fetchUserProfile to avoid re-creating it on every render
-  const fetchUserProfile = useCallback(async (supabaseUser: SupabaseUser) => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('auth_user_id, name, email, public_key, role, is_profile_complete') // Seleção explícita de colunas
-      .eq('auth_user_id', supabaseUser.id);
-    
-    if (error) {
-      console.error("Error fetching user profile:", error);
-      return null;
-    }
-    
-    if (!data || data.length === 0) {
-      console.warn("No user profile found for auth_user_id:", supabaseUser.id);
-      return null;
-    }
-
-    return data[0] as UserProfile;
-  }, []); // No dependencies, as supabase client is stable
-
   useEffect(() => {
-    const handleAuthEvent = async (_event: string, currentSession: Session | null) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+    const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('auth_user_id, name, email, public_key, role, is_profile_complete') // Seleção explícita de colunas
+        .eq('auth_user_id', supabaseUser.id);
+      
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        return null;
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn("No user profile found for auth_user_id:", supabaseUser.id);
+        return null;
+      }
 
-      if (currentSession) {
-        setLoading(true); // Set loading true while processing any session
+      return data[0] as UserProfile;
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (_event === 'SIGNED_IN' && session) {
+        setLoading(true);
         try {
           // Sync user with our backend (creates wallet if new)
           const response = await fetch('https://sleepy-capybara-trot.onrender.com/api/auth/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user: currentSession.user }),
+            body: JSON.stringify({ user: session.user }),
           });
           if (!response.ok) throw new Error('Failed to sync user with backend.');
           
           // After sync, fetch the profile from Supabase
-          const userProfile = await fetchUserProfile(currentSession.user);
+          const userProfile = await fetchUserProfile(session.user);
+          
+          // Permitir que o perfil seja definido mesmo que o role esteja faltando.
+          // A página Login.tsx agora será responsável por exibir a mensagem de 'acesso pendente'.
           setProfile(userProfile); 
-          console.log(`User synced and profile fetched successfully on ${_event}.`);
+          console.log('User synced and profile fetched successfully.');
+          // Do NOT navigate here. Login.tsx will handle redirection based on profile completeness.
         } catch (error) {
-          console.error(`Backend sync or profile fetch error on ${_event}:`, error);
-          await supabase.auth.signOut(); // Force logout on sync/fetch error
+          console.error('Backend sync or profile fetch error:', error);
+          await supabase.auth.signOut(); // Forçar logout em caso de erro de sincronização ou busca
         } finally {
-          setLoading(false); // Always set loading to false after processing session
+          setLoading(false);
         }
-      } else {
-        // No session (e.g., SIGNED_OUT or no initial session)
+      } else if (_event === 'SIGNED_OUT') {
         setProfile(null);
-        if (_event === 'SIGNED_OUT') {
-          navigate('/login');
-        }
-        setLoading(false); // Always set loading to false if no session
+        navigate('/login');
+        setLoading(false);
+      } else if (session) {
+        // Handle initial session load (e.g., on page refresh)
+        const userProfile = await fetchUserProfile(session.user);
+        
+        // Permitir que o perfil seja definido mesmo que o role esteja faltando.
+        setProfile(userProfile);
+        setLoading(false);
+      } else {
+        // No session
+        setLoading(false);
       }
-    };
+    });
 
-    // Initial check and setup listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthEvent);
-
-    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, fetchUserProfile]); // Added fetchUserProfile to dependencies
+  }, [navigate]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
