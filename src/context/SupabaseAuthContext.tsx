@@ -36,23 +36,24 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
     let isMounted = true;
 
     const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
-      console.log('SupabaseAuthContext: Fetching user profile for:', supabaseUser.id);
+      console.log('SupabaseAuthContext: START Fetching user profile for:', supabaseUser.id);
       const { data, error } = await supabase
         .from('users')
-        .select('auth_user_id, name, email, public_key, role, is_profile_complete') // Seleção explícita de colunas
-        .eq('auth_user_id', supabaseUser.id);
-      
+        .select('auth_user_id, name, email, public_key, role, is_profile_complete')
+        .eq('auth_user_id', supabaseUser.id)
+        .single(); // Usando .single() para esperar uma ou zero linhas
+
       if (error) {
-        console.error("SupabaseAuthContext: Error fetching user profile:", error);
+        if (error.code === 'PGRST116') { // Código para 'nenhuma linha encontrada'
+          console.warn("SupabaseAuthContext: No user profile found for auth_user_id:", supabaseUser.id);
+        } else {
+          console.error("SupabaseAuthContext: Error fetching user profile:", error);
+        }
         return null;
       }
       
-      if (!data || data.length === 0) {
-        console.warn("SupabaseAuthContext: No user profile found for auth_user_id:", supabaseUser.id);
-        return null;
-      }
-      console.log('SupabaseAuthContext: User profile fetched:', data[0]);
-      return data[0] as UserProfile;
+      console.log('SupabaseAuthContext: User profile fetched:', data); // data será o objeto único se bem-sucedido
+      return data as UserProfile;
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -125,6 +126,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         currentProfile = null; // Ensure profile is cleared on unhandled error
       } finally {
         if (isMounted) {
+          console.log('SupabaseAuthContext: Finalizing auth state. currentProfile:', current currentProfile); // NOVO LOG
           setProfile(currentProfile); // Update profile state once at the end
           setLoading(false); // Always set loading to false at the very end
           console.log('SupabaseAuthContext: setLoading(false) called.');
