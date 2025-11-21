@@ -47,20 +47,6 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
     // This functionality is temporarily disabled as there is no backend endpoint for it.
     toast.info("A remoção de participantes individuais ainda não é suportada.");
     return;
-
-    // Kept for future reference when backend supports it
-    /*
-    if (partner.public_key === batchData.details.brand_owner_key) {
-      toast.error("O dono da marca não pode ser removido da lista de participantes.");
-      return;
-    }
-    if (partner.public_key === batchData.details.current_holder_key) {
-      toast.error("O detentor atual do lote não pode ser removido.");
-      return;
-    }
-    setParticipantToRemove(partner);
-    setIsDeleteConfirmModalOpen(true);
-    */
   };
 
   const handleConfirmRemove = async () => {
@@ -157,3 +143,6 @@ const ParticipantsCard: React.FC<ParticipantsCardProps> = ({
       </AlertDialog>
     </Card>
   );
+};
+
+export default ParticipantsCard;
