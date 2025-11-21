@@ -7,157 +7,86 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { PlusCircle, Search, PackageOpen, User, Sprout, ChevronRight } from 'lucide-react';
+import { PlusCircle, Search, PackageOpen, Sprout, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import Modal from '@/components/common/Modal'; // Import Modal
-import CreateBatchWizard from '@/components/wizards/CreateBatchWizard'; // Import the new wizard from 'wizards' directory
-
-// Mock data for batches
-const mockBatches = [
-  {
-    id: "BTC-2024-089",
-    variety: "Catuaí Vermelho 2SL",
-    producer: "Fazenda Esperança",
-    created_at: "12/11/2024",
-    current_custody: "Transportadora Veloz",
-    custody_role: "Logistics",
-    status: "IN_TRANSIT",
-    is_finalized: false
-  },
-  {
-    id: "BTC-2024-055",
-    variety: "Bourbon Amarelo",
-    producer: "Fazenda Esperança",
-    created_at: "20/10/2024",
-    current_custody: "Torrefação Elite",
-    custody_role: "Roaster",
-    status: "FINALIZED",
-    is_finalized: true
-  },
-  {
-    id: "BTC-2024-092",
-    variety: "Geisha Premium",
-    producer: "Fazenda Santa Clara",
-    created_at: "17/11/2024",
-    current_custody: "Fazenda Santa Clara",
-    custody_role: "Producer",
-    status: "PROCESSING",
-    is_finalized: false
-  },
-  {
-    id: "BTC-2024-093",
-    variety: "Arábica Blend",
-    producer: "Fazenda União",
-    created_at: "18/11/2024",
-    current_custody: "João Silva", // Mock current user (Brand Owner) custody
-    custody_role: "Producer", // Consistent with the wizard's logic
-    status: "PROCESSING",
-    is_finalized: false
-  }
-];
+import Modal from '@/components/common/Modal';
+import CreateBatchWizard from '@/components/wizards/CreateBatchWizard';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getBatches, createBatch, Batch } from '@/api/batchService';
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 
 const MyBatches: React.FC = () => {
   const navigate = useNavigate();
-  const [batches, setBatches] = React.useState(mockBatches);
+  const queryClient = useQueryClient();
+  const { profile } = useSupabaseAuth();
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState('todos');
-  const [isCreateBatchModalOpen, setIsCreateBatchModalOpen] = React.useState(false); // New state for modal
+  const [statusFilter, setStatusFilter] = React.useState('all');
+  const [isCreateBatchModalOpen, setIsCreateBatchModalOpen] = React.useState(false);
 
-  // Mock current user's custody name for highlighting (Brand Owner)
-  const currentUserCustodyName = "João Silva"; // Still needed for highlighting logic
+  const { data: batches = [], isLoading } = useQuery({
+    queryKey: ['batches', 'my-batches'],
+    queryFn: () => getBatches('my-batches'),
+    enabled: !!profile,
+  });
+
+  const createBatchMutation = useMutation({
+    mutationFn: createBatch,
+    onSuccess: (data) => {
+      toast.success(`Lote ${data.batch.onchain_id} criado com sucesso!`);
+      queryClient.invalidateQueries({ queryKey: ['batches', 'my-batches'] });
+      setIsCreateBatchModalOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(`Falha ao criar o lote: ${error.message}`);
+    },
+  });
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case "IN_TRANSIT":
-      case "PROCESSING":
-        return "emandamento"; // Amber for in progress
-      case "FINALIZED":
-        return "concluido"; // Green for finalized
-      case "CREATED":
-        return "criado"; // Blue for created
-      case "BLOCKED":
-        return "bloqueado"; // Red for blocked
-      default:
-        return "default";
+      case "processing": return "emandamento";
+      case "finalized": return "concluido";
+      case "created": return "criado";
+      default: return "default";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "IN_TRANSIT":
-        return "Em Trânsito";
-      case "PROCESSING":
-        return "Em Processamento";
-      case "FINALIZED":
-        return "Finalizado";
-      case "CREATED":
-        return "Criado";
-      case "BLOCKED":
-        return "Bloqueado";
-      default:
-        return "Desconhecido";
+      case "processing": return "Em Processamento";
+      case "finalized": return "Finalizado";
+      case "created": return "Criado";
+      default: return "Desconhecido";
     }
   };
 
   const filteredBatches = batches.filter(batch => {
-    const matchesSearch = batch.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          batch.variety.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'todos' ||
-                          (statusFilter === 'processing' && (batch.status === 'PROCESSING' || batch.status === 'IN_TRANSIT')) ||
-                          (statusFilter === 'finalized' && batch.status === 'FINALIZED');
+    const matchesSearch = batch.onchain_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (batch.variety && batch.variety.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === 'all' || batch.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const handleCreateNewBatch = () => {
-    setIsCreateBatchModalOpen(true); // Open the modal
-  };
-
-  const handleSaveNewBatch = (newBatchData: {
-    id: string;
-    producerName: string;
-    variety: string;
-    internalNote?: string;
-    initialHolderPublicKey: string;
-    participantsPublicKeys: string[];
-  }) => {
-    // Para agora, apenas adiciona aos dados mockados. Em uma aplicação real, seria uma chamada de API.
-    const newMockBatch = {
-      id: newBatchData.id,
-      variety: newBatchData.variety,
-      producer: newBatchData.producerName,
-      created_at: new Date().toLocaleDateString('pt-BR'),
-      current_custody: "João Silva", // Assuming brand owner is always 'João Silva' for mock
-      custody_role: "Producer", // Consistent with the wizard's logic
-      status: "CREATED",
-      is_finalized: false
-    };
-    setBatches((prev) => [newMockBatch, ...prev]);
-    toast.success(`Lote ${newBatchData.id} criado com sucesso!`);
-    setIsCreateBatchModalOpen(false);
+  const handleSaveNewBatch = (newBatchData: any) => {
+    createBatchMutation.mutate(newBatchData);
   };
 
   const handleViewDetails = (batchId: string) => {
-    navigate(`/batches/${batchId}`); // Navigate to the new BatchDetails page
+    navigate(`/batches/${batchId}`);
   };
-
-  const hasBatches = filteredBatches.length > 0;
 
   return (
     <div className="space-y-8 py-8">
-      {/* Header Area */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-primary-foreground">Meus Lotes</h1>
           <p className="text-md text-slate-400 mt-1">Gerencie e rastreie a produção e custódia do seu café.</p>
         </div>
-        <Button variant="primary" onClick={handleCreateNewBatch} className="flex items-center space-x-2">
+        <Button variant="primary" onClick={() => setIsCreateBatchModalOpen(true)} className="flex items-center space-x-2">
           <PlusCircle className="h-4 w-4" />
           <span>Criar Novo Lote</span>
         </Button>
       </div>
 
-      {/* Filters Bar */}
       <div className="flex flex-col md:flex-row items-center gap-4 p-4 rounded-lg bg-slate-800/60 backdrop-blur-md border border-slate-700 shadow-lg">
         <div className="relative flex-1 w-full md:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -174,16 +103,20 @@ const MyBatches: React.FC = () => {
             <SelectValue placeholder="Filtrar por Status" />
           </SelectTrigger>
           <SelectContent className="bg-slate-800 border-slate-700 text-primary-foreground">
-            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="processing">Em Processamento</SelectItem>
             <SelectItem value="finalized">Finalizados</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Batches Table / Empty State */}
       <section>
-        {hasBatches ? (
+        {isLoading ? (
+          <div className="text-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-2 text-muted-foreground">Carregando seus lotes...</p>
+          </div>
+        ) : filteredBatches.length > 0 ? (
           <div className="overflow-x-auto">
             <Table className="[border-spacing:0_1rem] border-separate">
               <TableHeader className="bg-transparent">
@@ -203,16 +136,16 @@ const MyBatches: React.FC = () => {
                   >
                     <TableCell className="py-4 px-6">
                       <div className="flex flex-col">
-                        <span className="font-mono text-slate-400 text-sm">{batch.id}</span>
-                        <span className="font-bold text-primary-foreground">{batch.variety}</span>
+                        <span className="font-mono text-slate-400 text-sm">{batch.onchain_id}</span>
+                        <span className="font-bold text-primary-foreground">{batch.variety || 'N/A'}</span>
                       </div>
                     </TableCell>
                     <TableCell className="py-4 px-6">
                       <div className="flex items-center space-x-2 text-slate-400">
                         <Sprout className="h-4 w-4 text-green-400" />
                         <div className="flex flex-col">
-                          <span>{batch.producer}</span>
-                          <span className="text-xs">{batch.created_at}</span>
+                          <span>{batch.producer_name}</span>
+                          <span className="text-xs">{new Date(batch.created_at).toLocaleDateString('pt-BR')}</span>
                         </div>
                       </div>
                     </TableCell>
@@ -220,12 +153,10 @@ const MyBatches: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="bg-muted text-muted-foreground text-sm">
-                            {batch.current_custody.split(' ').map(n => n[0]).join('')}
+                            {batch.users?.name.split(' ').map(n => n[0]).join('') || '?'}
                           </AvatarFallback>
                         </Avatar>
-                        <div className={cn("text-indigo-300", { "font-bold text-amber-400": batch.current_custody === currentUserCustodyName })}>
-                          {batch.current_custody}
-                        </div>
+                        <div>{batch.users?.name || 'Desconhecido'}</div>
                       </div>
                     </TableCell>
                     <TableCell className="py-4 px-6">
@@ -248,7 +179,7 @@ const MyBatches: React.FC = () => {
             <p className="text-muted-foreground max-w-md">
               Comece sua rastreabilidade agora criando seu primeiro lote.
             </p>
-            <Button variant="primary" onClick={handleCreateNewBatch} className="flex items-center space-x-2 mt-4">
+            <Button variant="primary" onClick={() => setIsCreateBatchModalOpen(true)} className="flex items-center space-x-2 mt-4">
               <PlusCircle className="h-4 w-4" />
               <span>Criar Primeiro Lote</span>
             </Button>
@@ -256,7 +187,6 @@ const MyBatches: React.FC = () => {
         )}
       </section>
 
-      {/* Create Batch Modal */}
       <Modal
         open={isCreateBatchModalOpen}
         onOpenChange={setIsCreateBatchModalOpen}

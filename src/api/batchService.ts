@@ -1,349 +1,63 @@
-// src/api/batchService.ts
+import apiClient from '@/lib/apiClient';
 import { Partner } from '@/hooks/use-partners';
-import { toast } from 'sonner';
 
-// Mock data for partners (should ideally come from a central source like usePartners)
-const mockPartners: Partner[] = [
-  { id: 'p1', name: 'Café do Sol Ltda.', role: 'producer', email: 'contato@cafedosol.com', public_key: '0xabc...123' },
-  { id: 'p2', name: 'Logística Rápida S.A.', role: 'logistics', email: 'info@lograpida.com', public_key: '0xdef...456' },
-  { id: 'p3', name: 'Torrefação Aroma Fino', role: 'roaster', email: 'vendas@aromafino.com', public_key: '0xghi...789' },
-  { id: 'p4', name: 'Distribuidora Grão Nobre', role: 'distributor', email: 'contato@graonobre.com', public_key: '0xjkl...012' },
-  { id: 'p5', name: 'Fazenda Verde Vale', role: 'producer', email: 'contato@verdevale.com', public_key: '0xmnp...345' },
-  { id: 'p6', name: 'Armazém Central', role: 'warehouse', email: 'contato@armazemcentral.com', public_key: '0xopq...678' },
-  { id: 'p7', name: 'João Silva', role: 'brand_owner', email: 'joao.silva@coffeledger.com', public_key: '0xbrandownerkey123' }, // Mock Brand Owner
-  { id: 'p8', name: 'TransCafé Express', role: 'logistics', email: 'ops@transcafe.com.br', public_key: 'WORKER-WALLET-456' }, // Mock Logistics Partner
-  { id: 'p9', name: 'Transportadora Veloz', role: 'logistics', email: 'contato@veloz.com', public_key: '0xvelozkey789' }, // New Mock Logistics Partner
-  { id: 'p10', name: 'Fazenda Esperança', role: 'producer', email: 'contato@esperanca.com', public_key: '0xesperancakey123' }, // New Mock Producer (for demo login)
-  { id: 'p11', name: 'Armazém Global', role: 'warehouse', email: 'contato@armazemglobal.com', public_key: '0xwarehousekey123' }, // New Mock Warehouse (for demo login)
-];
+// Basic type for a batch list item
+export interface Batch {
+  id: string;
+  onchain_id: string;
+  producer_name: string;
+  current_holder_key: string;
+  status: string;
+  created_at: string;
+  users: { name: string; role: string };
+  variety?: string; // Making variety optional as it might not be in all list views
+}
 
-// Mock Batch Data Store
-let mockBatchesData: any[] = [
-  {
-    details: {
-      id: 'BTC-2024-093',
-      onchain_id: 'BTC-2024-093',
-      producer_name: 'Fazenda União',
-      variety: 'Arábica Blend',
-      internal_note: 'Ref: Talhão 5, Safra 2024',
-      brand_owner_key: '0xbrandownerkey123',
-      current_holder_key: '0xbrandownerkey123', // Currently with Brand Owner
-      status: 'processing',
-      batch_participants: [
-        { id: 'bp1', partner: mockPartners.find(p => p.public_key === '0xbrandownerkey123'), joined_at: '2024-11-18T10:00:00Z' },
-        { id: 'bp2', partner: mockPartners.find(p => p.id === 'p1'), joined_at: '2024-11-18T10:00:00Z' }, // Producer
-        { id: 'bp3', partner: mockPartners.find(p => p.id === 'p2'), joined_at: '2024-11-18T10:00:00Z' }, // Logistics
-        { id: 'bp4', partner: mockPartners.find(p => p.id === 'p3'), joined_at: '2024-11-18T10:00:00Z' }, // Roaster
-      ].filter(bp => bp.partner), // Filter out any undefined partners
-    },
-    stages: [
-      {
-        id: 'stage-001',
-        type: 'creation',
-        title: 'Lote Criado',
-        actor: 'João Silva',
-        actor_public_key: '0xbrandownerkey123',
-        timestamp: '2024-11-18T10:00:00Z',
-        hash: '0xabc123def456ghi789jkl012mno345pqr678stu901vwx234yz567',
-        formData: {
-          producerName: 'Fazenda União',
-          variety: 'Arábica Blend',
-          internalNote: 'Ref: Talhão 5, Safra 2024',
-        },
-        status: 'completed',
-      },
-    ],
-  },
-  {
-    details: {
-      id: 'FSC-25-9X7K',
-      onchain_id: 'FSC-25-9X7K',
-      producer_name: 'Fazenda Santa Clara',
-      variety: 'Geisha Premium',
-      internal_note: 'Lote especial para exportação',
-      brand_owner_key: '0xbrandownerkey123',
-      current_holder_key: 'WORKER-WALLET-456', // Currently with Logistics Partner
-      status: 'processing',
-      batch_participants: [
-        { id: 'bp5', partner: mockPartners.find(p => p.public_key === '0xbrandownerkey123'), joined_at: '2025-11-17T09:00:00Z' },
-        { id: 'bp6', partner: mockPartners.find(p => p.id === 'p5'), joined_at: '2025-11-17T09:00:00Z' }, // Producer
-        { id: 'bp7', partner: mockPartners.find(p => p.public_key === 'WORKER-WALLET-456'), joined_at: '2025-11-18T08:00:00Z' }, // Logistics
-        { id: 'bp8', partner: mockPartners.find(p => p.id === 'p6'), joined_at: '2025-11-18T08:00:00Z' }, // Warehouse
-      ].filter(bp => bp.partner),
-    },
-    stages: [
-      {
-        id: 'stage-002',
-        type: 'creation',
-        title: 'Lote Criado',
-        actor: 'João Silva',
-        actor_public_key: '0xbrandownerkey123',
-        timestamp: '2025-11-17T09:00:00Z',
-        hash: '0xdef456ghi789jkl012mno345pqr678stu901vwx234yz567abc1',
-        formData: {
-          producerName: 'Fazenda Santa Clara',
-          variety: 'Geisha Premium',
-          internalNote: 'Lote especial para exportação',
-        },
-        status: 'completed',
-      },
-      {
-        id: 'stage-003',
-        type: 'movement',
-        title: 'Coleta Realizada',
-        actor: 'Fazenda Santa Clara',
-        actor_public_key: mockPartners.find(p => p.id === 'p5')?.public_key,
-        timestamp: '2025-11-18T08:00:00Z',
-        hash: '0x123abc456def789ghi012jkl345mno678pqr901stu234vwx567yz',
-        formData: {
-          collectionDate: '2025-11-18',
-          vehiclePlate: 'ABC-1234',
-        },
-        status: 'completed',
-      },
-    ],
-  },
-  {
-    details: {
-      id: 'BTC-2024-089',
-      onchain_id: 'BTC-2024-089',
-      producer_name: 'Fazenda Esperança',
-      variety: 'Catuaí Vermelho 2SL',
-      internal_note: 'Lote para mercado interno',
-      brand_owner_key: '0xbrandownerkey123',
-      current_holder_key: '0xvelozkey789', // Currently with Transportadora Veloz
-      status: 'processing', // Corresponds to IN_TRANSIT
-      batch_participants: [
-        { id: 'bp_bo_089', partner: mockPartners.find(p => p.public_key === '0xbrandownerkey123'), joined_at: '2024-11-12T09:00:00Z' },
-        { id: 'bp_prod_089', partner: mockPartners.find(p => p.id === 'p10'), joined_at: '2024-11-12T09:00:00Z' }, // Fazenda Esperança
-        { id: 'bp_log_089', partner: mockPartners.find(p => p.public_key === '0xvelozkey789'), joined_at: '2024-11-12T10:00:00Z' }, // Transportadora Veloz
-      ].filter(bp => bp.partner),
-    },
-    stages: [
-      {
-        id: 'stage-089-001',
-        type: 'creation',
-        title: 'Lote Criado',
-        actor: 'João Silva',
-        actor_public_key: '0xbrandownerkey123',
-        timestamp: '2024-11-12T09:00:00Z',
-        hash: '0xabc089def456ghi789jkl012mno345pqr678stu901vwx234yz567',
-        formData: {
-          producerName: 'Fazenda Esperança',
-          variety: 'Catuaí Vermelho 2SL',
-          internalNote: 'Lote para mercado interno',
-        },
-        status: 'completed',
-      },
-      {
-        id: 'stage-089-002',
-        type: 'movement',
-        title: 'Coleta Realizada',
-        actor: 'Fazenda Esperança',
-        actor_public_key: mockPartners.find(p => p.id === 'p10')?.public_key,
-        timestamp: '2024-11-12T10:00:00Z',
-        hash: '0x123089abc456def789ghi012jkl345mno678pqr901stu234vwx567',
-        formData: {
-          collectionDate: '2024-11-12',
-          vehiclePlate: 'XYZ-5678',
-        },
-        status: 'completed',
-      },
-    ],
-  },
-  // New mock batch for producer demo user
-  {
-    details: {
-      id: 'FES-2024-PROD',
-      onchain_id: 'FES-2024-PROD',
-      producer_name: 'Fazenda Esperança',
-      variety: 'Catuaí Amarelo',
-      internal_note: 'Lote de teste para produtor demo',
-      brand_owner_key: '0xbrandownerkey123',
-      current_holder_key: '0xesperancakey123', // Currently with Fazenda Esperança (producer demo)
-      status: 'processing',
-      batch_participants: [
-        { id: 'bp_bo_prod', partner: mockPartners.find(p => p.public_key === '0xbrandownerkey123'), joined_at: '2024-11-20T08:00:00Z' },
-        { id: 'bp_prod_prod', partner: mockPartners.find(p => p.public_key === '0xesperancakey123'), joined_at: '2024-11-20T08:00:00Z' }, // Fazenda Esperança (producer demo)
-      ].filter(bp => bp.partner),
-    },
-    stages: [
-      {
-        id: 'stage-prod-001',
-        type: 'creation',
-        title: 'Lote Criado',
-        actor: 'João Silva',
-        actor_public_key: '0xbrandownerkey123',
-        timestamp: '2024-11-20T08:00:00Z',
-        hash: '0xprod123def456ghi789jkl012mno345pqr678stu901vwx234yz567',
-        formData: {
-          producerName: 'Fazenda Esperança',
-          variety: 'Catuaí Amarelo',
-          internalNote: 'Lote de teste para produtor demo',
-        },
-        status: 'completed',
-      },
-    ],
-  },
-  // New mock batch for warehouse demo user
-  {
-    details: {
-      id: 'ARM-2024-WH',
-      onchain_id: 'ARM-2024-WH',
-      producer_name: 'Fazenda União',
-      variety: 'Bourbon Amarelo',
-      internal_note: 'Lote para armazenamento temporário',
-      brand_owner_key: '0xbrandownerkey123',
-      current_holder_key: '0xwarehousekey123', // Currently with Armazém Global (warehouse demo)
-      status: 'processing',
-      batch_participants: [
-        { id: 'bp_bo_wh', partner: mockPartners.find(p => p.public_key === '0xbrandownerkey123'), joined_at: '2024-11-21T09:00:00Z' },
-        { id: 'bp_log_wh', partner: mockPartners.find(p => p.public_key === 'WORKER-WALLET-456'), joined_at: '2024-11-21T10:00:00Z' },
-        { id: 'bp_wh_wh', partner: mockPartners.find(p => p.public_key === '0xwarehousekey123'), joined_at: '2024-11-21T11:00:00Z' }, // Armazém Global (warehouse demo)
-      ].filter(bp => bp.partner),
-    },
-    stages: [
-      {
-        id: 'stage-wh-001',
-        type: 'creation',
-        title: 'Lote Criado',
-        actor: 'João Silva',
-        actor_public_key: '0xbrandownerkey123',
-        timestamp: '2024-11-21T09:00:00Z',
-        hash: '0xwh123def456ghi789jkl012mno345pqr678stu901vwx234yz567',
-        formData: {
-          producerName: 'Fazenda União',
-          variety: 'Bourbon Amarelo',
-          internalNote: 'Lote para armazenamento temporário',
-        },
-        status: 'completed',
-      },
-      {
-        id: 'stage-wh-002',
-        type: 'movement',
-        title: 'Recebido pela Logística',
-        actor: 'TransCafé Express',
-        actor_public_key: 'WORKER-WALLET-456',
-        timestamp: '2024-11-21T10:00:00Z',
-        hash: '0xwh456def789ghi012jkl345mno678pqr901stu234vwx567abc1',
-        formData: {
-          origin: 'Fazenda União',
-          destination: 'Armazém Global',
-          vehicleType: 'truck_dry',
-        },
-        status: 'completed',
-      },
-    ],
-  },
-];
+// More detailed type for a single batch view
+export interface BatchDetails extends Batch {
+  stages: any[];
+  batch_participants: { partner: Partner }[];
+  brand_owner_key: string;
+}
 
-export const getBatchById = async (id: string) => {
-  await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-  const batch = mockBatchesData.find(b => b.details.id === id);
-  if (!batch) {
-    throw new Error(`Lote com ID ${id} não encontrado.`);
-  }
-  return JSON.parse(JSON.stringify(batch)); // Return a deep copy to prevent direct mutation
+export const getBatches = async (type: 'my-batches' | 'my-tasks'): Promise<Batch[]> => {
+  return apiClient<Batch[]>(`/batches?type=${type}`);
 };
 
-export const finalizeBatch = async (batchId: string, data: { brandOwnerKey: string }) => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const batchIndex = mockBatchesData.findIndex(b => b.details.id === batchId);
-  if (batchIndex === -1) {
-    throw new Error(`Lote com ID ${batchId} não encontrado.`);
-  }
-  if (mockBatchesData[batchIndex].details.brand_owner_key !== data.brandOwnerKey) {
-    throw new Error("Apenas o dono da marca pode finalizar o lote.");
-  }
-  mockBatchesData[batchIndex].details.status = 'completed';
-  mockBatchesData[batchIndex].stages.push({
-    id: `stage-${Date.now()}`,
-    type: 'system',
-    title: 'Lote Finalizado',
-    actor: 'Sistema',
-    actor_public_key: data.brandOwnerKey,
-    timestamp: new Date().toISOString(),
-    hash: `0x${Math.random().toString(16).substring(2, 66)}`, // Mock hash
-    status: 'completed',
-  });
-  return { success: true, message: `Lote ${batchId} finalizado.` };
+export const getBatchById = async (id: string): Promise<BatchDetails> => {
+  return apiClient<BatchDetails>(`/batches/${id}`);
 };
 
-export const addParticipantsToBatch = async (batchId: string, newParticipantPublicKeys: string[]) => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const batchIndex = mockBatchesData.findIndex(b => b.details.id === batchId);
-  if (batchIndex === -1) {
-    throw new Error(`Lote com ID ${batchId} não encontrado.`);
-  }
-
-  const currentParticipantPublicKeys = mockBatchesData[batchIndex].details.batch_participants.map((p: any) => p.partner.public_key);
-  const participantsToAdd = mockPartners.filter(p =>
-    newParticipantPublicKeys.includes(p.public_key) && !currentParticipantPublicKeys.includes(p.public_key)
-  );
-
-  participantsToAdd.forEach(newPartner => {
-    mockBatchesData[batchIndex].details.batch_participants.push({
-      id: `bp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      partner: newPartner,
-      joined_at: new Date().toISOString(),
-    });
+export const createBatch = async (batchData: any): Promise<{ batch: BatchDetails }> => {
+  return apiClient<{ batch: BatchDetails }>('/batches', {
+    method: 'POST',
+    body: JSON.stringify(batchData),
   });
-
-  return { success: true, message: `${participantsToAdd.length} novos participantes adicionados.` };
 };
 
-export const registerStage = async (batchId: string, stageData: any, actorPublicKey: string, actorName: string, stageType: string, stageTitle: string) => {
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  const batchIndex = mockBatchesData.findIndex(b => b.details.id === batchId);
-  if (batchIndex === -1) {
-    throw new Error(`Lote com ID ${batchId} não encontrado.`);
-  }
-
-  // Simulate blockchain transaction hash
-  const transactionHash = `0x${Math.random().toString(16).substring(2, 66)}`;
-
-  mockBatchesData[batchIndex].stages.push({
-    id: `stage-${Date.now()}`,
-    type: stageType,
-    title: stageTitle,
-    actor: actorName,
-    actor_public_key: actorPublicKey,
-    timestamp: new Date().toISOString(),
-    hash: transactionHash,
-    formData: stageData,
-    status: 'completed', // Mark as completed once registered
+export const addParticipantsToBatch = async (batchId: string, new_participant_public_keys: string[]): Promise<{ message: string }> => {
+  return apiClient<{ message: string }>(`/batches/${batchId}/participants`, {
+    method: 'POST',
+    body: JSON.stringify({ new_participant_public_keys }),
   });
-
-  return { success: true, message: `Etapa '${stageTitle}' registrada com sucesso!`, transactionHash };
 };
 
-export const transferCustody = async (batchId: string, currentHolderPublicKey: string, nextHolderPublicKey: string) => {
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  const batchIndex = mockBatchesData.findIndex(b => b.details.id === batchId);
-  if (batchIndex === -1) {
-    throw new Error(`Lote com ID ${batchId} não encontrado.`);
-  }
-
-  if (mockBatchesData[batchIndex].details.current_holder_key !== currentHolderPublicKey) {
-    throw new Error("Você não é o detentor atual deste lote para transferir a custódia.");
-  }
-
-  const nextHolder = mockPartners.find(p => p.public_key === nextHolderPublicKey);
-  if (!nextHolder) {
-    throw new Error("Próximo detentor não encontrado.");
-  }
-
-  mockBatchesData[batchIndex].details.current_holder_key = nextHolderPublicKey;
-  mockBatchesData[batchIndex].stages.push({
-    id: `stage-${Date.now()}`,
-    type: 'movement',
-    title: `Custódia Transferida para ${nextHolder.name}`,
-    actor: nextHolder.name,
-    actor_public_key: nextHolderPublicKey,
-    timestamp: new Date().toISOString(),
-    hash: `0x${Math.random().toString(16).substring(2, 66)}`, // Mock hash
-    status: 'completed',
+export const registerStage = async (batchId: string, stageData: any): Promise<{ stage: any }> => {
+  return apiClient<{ stage: any }>(`/batches/${batchId}/stages`, {
+    method: 'POST',
+    body: JSON.stringify(stageData),
   });
+};
 
-  return { success: true, message: `Custódia do lote ${batchId} transferida para ${nextHolder.name}.` };
+export const transferCustody = async (batchId: string, next_holder_public_key: string): Promise<{ batch: Batch }> => {
+  return apiClient<{ batch: Batch }>(`/batches/${batchId}/transfer-custody`, {
+    method: 'PUT',
+    body: JSON.stringify({ next_holder_public_key }),
+  });
+};
+
+export const finalizeBatch = async (batchId: string): Promise<{ batch: Batch }> => {
+  return apiClient<{ batch: Batch }>(`/batches/${batchId}/finalize`, {
+    method: 'PUT',
+  });
 };
