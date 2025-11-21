@@ -3,6 +3,7 @@ import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { PartnerRoleKey } from '@/types/forms';
+import { toast } from 'sonner'; // Importar toast para mensagens de erro
 
 // This is our custom user profile from the public.users table
 export interface UserProfile {
@@ -32,7 +33,10 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true; // Flag para prevenir atualizações de estado em componente desmontado
+
     const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+      console.log('Fetching user profile for:', supabaseUser.id);
       const { data, error } = await supabase
         .from('users')
         .select('auth_user_id, name, email, public_key, role, is_profile_complete') // Seleção explícita de colunas
@@ -47,57 +51,85 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         console.warn("No user profile found for auth_user_id:", supabaseUser.id);
         return null;
       }
-
+      console.log('User profile fetched:', data[0]);
       return data[0] as UserProfile;
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return; // Prevenir atualizações de estado se o componente for desmontado
+
+      console.log('Auth State Change Event:', _event, 'Session exists:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (_event === 'SIGNED_IN' && session) {
-        setLoading(true);
-        try {
-          // Sync user with our backend (creates wallet if new)
-          const response = await fetch('https://sleepy-capybara-trot.onrender.com/api/auth/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user: session.user }),
-          });
-          if (!response.ok) throw new Error('Failed to sync user with backend.');
+      setLoading(true); // Definir loading como true no início do processamento de qualquer mudança de estado de autenticação
+
+      try {
+        if (_event === 'SIGNED_IN' && session) {
+          console.log('User SIGNED_IN. Attempting backend sync.');
           
-          // After sync, fetch the profile from Supabase
+          // Adicionar um tempo limite para a chamada fetch do backend
+          const controller = new AbortController();
+          const id = setTimeout(() => controller.abort(), 10000); // 10 segundos de tempo limite
+
+          try {
+            const response = await fetch('https://sleepy-capybara-trot.onrender.com/api/auth/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user: session.user }),
+              signal: controller.signal, // Aplicar o sinal do AbortController
+            });
+            clearTimeout(id); // Limpar o timeout se o fetch for concluído
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido do backend' }));
+              throw new Error(`Falha ao sincronizar usuário com o backend: ${errorData.message || response.statusText}`);
+            }
+            console.log('Backend sync successful.');
+          } catch (fetchError: any) {
+            clearTimeout(id); // Garantir que o timeout seja limpo mesmo em caso de erro no fetch
+            if (fetchError.name === 'AbortError') {
+              console.error('Backend sync timed out.');
+              toast.error('Sincronização com o backend falhou: Tempo esgotado. Por favor, tente novamente.');
+            } else {
+              console.error('Backend sync error:', fetchError);
+              toast.error(`Sincronização com o backend falhou: ${fetchError.message}.`);
+            }
+            await supabase.auth.signOut(); // Forçar logout em caso de falha na sincronização do backend
+            return; // Sair cedo, setLoading(false) será tratado pelo evento SIGNED_OUT
+          }
+
           const userProfile = await fetchUserProfile(session.user);
-          
-          // Permitir que o perfil seja definido mesmo que o role esteja faltando.
-          // A página Login.tsx agora será responsável por exibir a mensagem de 'acesso pendente'.
-          setProfile(userProfile); 
-          console.log('User synced and profile fetched successfully.');
-          // Do NOT navigate here. Login.tsx will handle redirection based on profile completeness.
-        } catch (error) {
-          console.error('Backend sync or profile fetch error:', error);
-          await supabase.auth.signOut(); // Forçar logout em caso de erro de sincronização ou busca
-        } finally {
-          setLoading(false);
+          setProfile(userProfile);
+          console.log('Profile fetched after SIGNED_IN.');
+
+        } else if (_event === 'SIGNED_OUT') {
+          console.log('User SIGNED_OUT.');
+          setProfile(null);
+          navigate('/login');
+
+        } else if (session) { // Lida com 'INITIAL_SESSION' e outros eventos onde a sessão existe, mas não é um novo login
+          console.log('Session exists (e.g., INITIAL_SESSION). Fetching profile.');
+          const userProfile = await fetchUserProfile(session.user);
+          setProfile(userProfile);
+
+        } else { // Nenhuma sessão (ex: após SIGNED_OUT, ou carregamento inicial sem sessão)
+          console.log('No session found.');
+          setProfile(null); // Garantir que o perfil seja nulo se não houver sessão
         }
-      } else if (_event === 'SIGNED_OUT') {
-        setProfile(null);
-        navigate('/login');
-        setLoading(false);
-      } else if (session) {
-        // Handle initial session load (e.g., on page refresh)
-        const userProfile = await fetchUserProfile(session.user);
-        
-        // Permitir que o perfil seja definido mesmo que o role esteja faltando.
-        setProfile(userProfile);
-        setLoading(false);
-      } else {
-        // No session
-        setLoading(false);
+      } catch (error) {
+        console.error('Unhandled error in onAuthStateChange:', error);
+        toast.error('Ocorreu um erro inesperado. Por favor, tente novamente.');
+        await supabase.auth.signOut(); // Garantir que o usuário seja desconectado em erros não tratados
+      } finally {
+        if (isMounted) {
+          setLoading(false); // Sempre definir loading como false no final
+          console.log('setLoading(false) called.');
+        }
       }
     });
 
     return () => {
+      isMounted = false; // Limpeza: definir a flag como false
       subscription.unsubscribe();
     };
   }, [navigate]);
