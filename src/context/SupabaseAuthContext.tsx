@@ -126,7 +126,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         currentProfile = null; // Ensure profile is cleared on unhandled error
       } finally {
         if (isMounted) {
-          console.log('SupabaseAuthContext: Finalizing auth state. currentProfile:', current currentProfile); // NOVO LOG
+          console.log('SupabaseAuthContext: Finalizing auth state. currentProfile:', currentProfile); // NOVO LOG
           setProfile(currentProfile); // Update profile state once at the end
           setLoading(false); // Always set loading to false at the very end
           console.log('SupabaseAuthContext: setLoading(false) called.');
