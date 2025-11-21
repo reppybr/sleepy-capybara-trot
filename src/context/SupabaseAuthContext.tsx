@@ -37,23 +37,30 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
       console.log('SupabaseAuthContext: START Fetching user profile for:', supabaseUser.id);
-      const { data, error } = await supabase
-        .from('users')
-        .select('auth_user_id, name, email, public_key, role, is_profile_complete')
-        .eq('auth_user_id', supabaseUser.id)
-        .single(); // Usando .single() para esperar uma ou zero linhas
+      try {
+        console.log('SupabaseAuthContext: Before Supabase query for user profile.');
+        const { data, error } = await supabase
+          .from('users')
+          .select('auth_user_id, name, email, public_key, role, is_profile_complete')
+          .eq('auth_user_id', supabaseUser.id)
+          .single(); // Usando .single() para esperar uma ou zero linhas
+        console.log('SupabaseAuthContext: After Supabase query. Data:', data, 'Error:', error);
 
-      if (error) {
-        if (error.code === 'PGRST116') { // Código para 'nenhuma linha encontrada'
-          console.warn("SupabaseAuthContext: No user profile found for auth_user_id:", supabaseUser.id);
-        } else {
-          console.error("SupabaseAuthContext: Error fetching user profile:", error);
+        if (error) {
+          if (error.code === 'PGRST116') { // Código para 'nenhuma linha encontrada'
+            console.warn("SupabaseAuthContext: No user profile found for auth_user_id:", supabaseUser.id);
+          } else {
+            console.error("SupabaseAuthContext: Error fetching user profile:", error);
+          }
+          return null;
         }
+        
+        console.log('SupabaseAuthContext: User profile fetched:', data); // data será o objeto único se bem-sucedido
+        return data as UserProfile;
+      } catch (fetchProfileError) {
+        console.error("SupabaseAuthContext: Unexpected error in fetchUserProfile:", fetchProfileError);
         return null;
       }
-      
-      console.log('SupabaseAuthContext: User profile fetched:', data); // data será o objeto único se bem-sucedido
-      return data as UserProfile;
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
