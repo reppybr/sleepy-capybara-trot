@@ -131,10 +131,8 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         if (isMounted) {
           console.log('SupabaseAuthContext: Finalizing auth state. currentProfile:', currentProfile);
           setProfile(currentProfile);
-          if (loading) {
-            setLoading(false);
-            console.log('SupabaseAuthContext: setLoading(false) called.');
-          }
+          setLoading(false);
+          console.log('SupabaseAuthContext: setLoading(false) called.');
         }
       }
     });
@@ -143,7 +141,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, loading]);
+  }, [navigate]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
