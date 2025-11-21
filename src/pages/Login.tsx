@@ -151,6 +151,7 @@ const Login: React.FC = () => {
                     providers={['google']}
                     theme="dark"
                     redirectTo={window.location.origin + '/login'}
+                    onlyThirdPartyProviders={true}
                     localization={{
                       variables: {
                         sign_in: {
