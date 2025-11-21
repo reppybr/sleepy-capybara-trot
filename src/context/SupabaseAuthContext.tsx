@@ -69,8 +69,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
       console.log('SupabaseAuthContext: Auth State Change Event:', _event, 'Session exists:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(true);
-
+      
       let currentProfile: UserProfile | null = null;
 
       try {
@@ -95,8 +94,8 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
             }
             const backendSyncData = await response.json();
             console.log('SupabaseAuthContext: Backend sync successful. Returned user:', backendSyncData.user);
-            // After sync, fetch the complete profile with metadata
-            currentProfile = await fetchUserProfile(session.user);
+            // Use the profile from the sync response directly instead of re-fetching
+            currentProfile = backendSyncData.user as UserProfile;
 
           } catch (fetchError: any) {
             clearTimeout(id);
@@ -132,8 +131,10 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
         if (isMounted) {
           console.log('SupabaseAuthContext: Finalizing auth state. currentProfile:', currentProfile);
           setProfile(currentProfile);
-          setLoading(false);
-          console.log('SupabaseAuthContext: setLoading(false) called.');
+          if (loading) {
+            setLoading(false);
+            console.log('SupabaseAuthContext: setLoading(false) called.');
+          }
         }
       }
     });
@@ -142,7 +143,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, loading]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -157,12 +158,3 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useSupabaseAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useSupabaseAuth must be used within a SupabaseAuthProvider');
-  }
-  return context;
-};
