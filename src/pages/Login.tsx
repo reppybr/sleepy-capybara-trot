@@ -18,7 +18,10 @@ const Login: React.FC = () => {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPublicKey, setCopiedPublicKey] = useState(false);
 
+  console.log('Login Render - Current State:', { loading, session: !!session, profile: !!profile, profileRole: profile?.role, isProfileComplete: profile?.is_profile_complete });
+
   useEffect(() => {
+    console.log('Login useEffect - Current State:', { loading, session: !!session, profile: !!profile, profileRole: profile?.role, isProfileComplete: profile?.is_profile_complete });
     if (!loading && session && profile) {
       if (profile.is_profile_complete) {
         if (profile.role === 'brand_owner') {
@@ -33,7 +36,6 @@ const Login: React.FC = () => {
   }, [session, loading, profile, navigate]);
 
   const handleCopy = (text: string, label: string, setCopiedState: React.Dispatch<React.SetStateAction<boolean>>) => {
-    // console.log(`Attempting to copy: "${text}" for label: "${label}"`); // Removido o console.log de depuração
     navigator.clipboard.writeText(text);
     toast.success(`${label} copiado para a área de transferência!`);
     setCopiedState(true);
@@ -41,6 +43,7 @@ const Login: React.FC = () => {
   };
 
   if (loading) {
+    console.log('Login: Showing "Carregando sessão..."');
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
         <p>Carregando sessão...</p>

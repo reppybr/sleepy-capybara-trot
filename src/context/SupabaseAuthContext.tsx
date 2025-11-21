@@ -3,7 +3,7 @@ import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { PartnerRoleKey } from '@/types/forms';
-import { toast } from 'sonner'; // Importar toast para mensagens de erro
+import { toast } from 'sonner';
 
 // This is our custom user profile from the public.users table
 export interface UserProfile {
@@ -33,41 +33,42 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
   const navigate = useNavigate();
 
   useEffect(() => {
-    let isMounted = true; // Flag para prevenir atualizações de estado em componente desmontado
+    let isMounted = true;
 
     const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
-      console.log('Fetching user profile for:', supabaseUser.id);
+      console.log('SupabaseAuthContext: Fetching user profile for:', supabaseUser.id);
       const { data, error } = await supabase
         .from('users')
         .select('auth_user_id, name, email, public_key, role, is_profile_complete') // Seleção explícita de colunas
         .eq('auth_user_id', supabaseUser.id);
       
       if (error) {
-        console.error("Error fetching user profile:", error);
+        console.error("SupabaseAuthContext: Error fetching user profile:", error);
         return null;
       }
       
       if (!data || data.length === 0) {
-        console.warn("No user profile found for auth_user_id:", supabaseUser.id);
+        console.warn("SupabaseAuthContext: No user profile found for auth_user_id:", supabaseUser.id);
         return null;
       }
-      console.log('User profile fetched:', data[0]);
+      console.log('SupabaseAuthContext: User profile fetched:', data[0]);
       return data[0] as UserProfile;
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!isMounted) return; // Prevenir atualizações de estado se o componente for desmontado
+      if (!isMounted) return;
 
-      console.log('Auth State Change Event:', _event, 'Session exists:', !!session);
+      console.log('SupabaseAuthContext: Auth State Change Event:', _event, 'Session exists:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(true); // Definir loading como true no início do processamento de qualquer mudança de estado de autenticação
+      setLoading(true); // Set loading true at the start of any auth state change processing
+
+      let currentProfile: UserProfile | null = null; // Use a local variable for profile
 
       try {
         if (_event === 'SIGNED_IN' && session) {
-          console.log('User SIGNED_IN. Attempting backend sync.');
+          console.log('SupabaseAuthContext: User SIGNED_IN. Attempting backend sync.');
           
-          // Adicionar um tempo limite para a chamada fetch do backend
           const controller = new AbortController();
           const id = setTimeout(() => controller.abort(), 10000); // 10 segundos de tempo limite
 
@@ -76,60 +77,63 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ user: session.user }),
-              signal: controller.signal, // Aplicar o sinal do AbortController
+              signal: controller.signal,
             });
-            clearTimeout(id); // Limpar o timeout se o fetch for concluído
+            clearTimeout(id);
 
             if (!response.ok) {
               const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido do backend' }));
               throw new Error(`Falha ao sincronizar usuário com o backend: ${errorData.message || response.statusText}`);
             }
-            console.log('Backend sync successful.');
+            console.log('SupabaseAuthContext: Backend sync successful.');
           } catch (fetchError: any) {
-            clearTimeout(id); // Garantir que o timeout seja limpo mesmo em caso de erro no fetch
+            clearTimeout(id);
             if (fetchError.name === 'AbortError') {
-              console.error('Backend sync timed out.');
+              console.error('SupabaseAuthContext: Backend sync timed out.');
               toast.error('Sincronização com o backend falhou: Tempo esgotado. Por favor, tente novamente.');
             } else {
-              console.error('Backend sync error:', fetchError);
+              console.error('SupabaseAuthContext: Backend sync error:', fetchError);
               toast.error(`Sincronização com o backend falhou: ${fetchError.message}.`);
             }
-            await supabase.auth.signOut(); // Forçar logout em caso de falha na sincronização do backend
-            return; // Sair cedo, setLoading(false) será tratado pelo evento SIGNED_OUT
+            await supabase.auth.signOut(); // Force sign out on backend sync failure
+            // Do NOT return here, let the finally block handle setLoading(false)
           }
 
-          const userProfile = await fetchUserProfile(session.user);
-          setProfile(userProfile);
-          console.log('Profile fetched after SIGNED_IN.');
+          // Fetch profile after potential backend sync (or if sync failed and user was signed out)
+          // Check if session.user is still valid after potential signOut
+          if (session.user) { 
+            currentProfile = await fetchUserProfile(session.user);
+          }
 
         } else if (_event === 'SIGNED_OUT') {
-          console.log('User SIGNED_OUT.');
-          setProfile(null);
+          console.log('SupabaseAuthContext: User SIGNED_OUT.');
+          currentProfile = null; // Clear profile on sign out
           navigate('/login');
 
-        } else if (session) { // Lida com 'INITIAL_SESSION' e outros eventos onde a sessão existe, mas não é um novo login
-          console.log('Session exists (e.g., INITIAL_SESSION). Fetching profile.');
-          const userProfile = await fetchUserProfile(session.user);
-          setProfile(userProfile);
+        } else if (session) { // Handles 'INITIAL_SESSION' and other events where session exists
+          console.log('SupabaseAuthContext: Session exists (e.g., INITIAL_SESSION). Fetching profile.');
+          currentProfile = await fetchUserProfile(session.user);
 
-        } else { // Nenhuma sessão (ex: após SIGNED_OUT, ou carregamento inicial sem sessão)
-          console.log('No session found.');
-          setProfile(null); // Garantir que o perfil seja nulo se não houver sessão
+        } else { // No session (e.g., after SIGNED_OUT, or initial load without session)
+          console.log('SupabaseAuthContext: No session found.');
+          currentProfile = null;
         }
       } catch (error) {
-        console.error('Unhandled error in onAuthStateChange:', error);
+        console.error('SupabaseAuthContext: Unhandled error in onAuthStateChange:', error);
         toast.error('Ocorreu um erro inesperado. Por favor, tente novamente.');
-        await supabase.auth.signOut(); // Garantir que o usuário seja desconectado em erros não tratados
+        await supabase.auth.signOut();
+        currentProfile = null; // Ensure profile is cleared on unhandled error
       } finally {
         if (isMounted) {
-          setLoading(false); // Sempre definir loading como false no final
-          console.log('setLoading(false) called.');
+          setProfile(currentProfile); // Update profile state once at the end
+          setLoading(false); // Always set loading to false at the very end
+          console.log('SupabaseAuthContext: setLoading(false) called.');
         }
       }
     });
 
     return () => {
-      isMounted = false; // Limpeza: definir a flag como false
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [navigate]);
