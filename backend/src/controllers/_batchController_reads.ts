@@ -28,8 +28,7 @@ export const getBatchesForUser = async (req: AuthenticatedRequest, res: Response
         current_holder_key,
         status,
         created_at,
-        brands (name),
-        stage_logs(metadata)
+        brands (name)
       `);
 
     if (status) {
@@ -49,33 +48,53 @@ export const getBatchesForUser = async (req: AuthenticatedRequest, res: Response
     if (batchesError) throw batchesError;
     if (!batches || batches.length === 0) return res.status(200).json([]);
 
-    // Etapa 2: Buscar os dados dos usuários (responsáveis) separadamente
+    const batchIds = batches.map(b => b.id);
     const holderKeys = [...new Set(batches.map(b => b.current_holder_key).filter(Boolean))];
-    
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('public_key, name, role')
-      .in('public_key', holderKeys);
 
+    // Etapa 2: Buscar dados relacionados em paralelo
+    const [
+      { data: stageLogs, error: stageLogsError },
+      { data: users, error: usersError }
+    ] = await Promise.all([
+      supabase
+        .from('stage_logs')
+        .select('batch_id, metadata')
+        .in('batch_id', batchIds)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('users')
+        .select('public_key, name, role')
+        .in('public_key', holderKeys)
+    ]);
+
+    if (stageLogsError) throw stageLogsError;
     if (usersError) throw usersError;
 
+    // Etapa 3: Mapear os dados para fácil acesso
     const usersMap = new Map(users.map(u => [u.public_key, u]));
+    const firstStageLogsMap = new Map<string, any>();
+    if (stageLogs) {
+      for (const log of stageLogs) {
+        if (!firstStageLogsMap.has(log.batch_id)) {
+          firstStageLogsMap.set(log.batch_id, log);
+        }
+      }
+    }
 
-    // Etapa 3: Combinar os dados
+    // Etapa 4: Combinar os dados
     const processedBatches = batches.map(batch => {
-        const firstStage = Array.isArray(batch.stage_logs) && batch.stage_logs.length > 0 ? batch.stage_logs[0] : null;
-        const variety = firstStage?.metadata?.variety || null;
-        const holderInfo = usersMap.get(batch.current_holder_key) || { name: 'Desconhecido', role: 'unknown' };
-        
-        const { stage_logs, ...rest } = batch;
-        return { 
-          ...rest, 
-          variety,
-          users: { // Replica a estrutura que o frontend espera
-            name: holderInfo.name,
-            role: holderInfo.role
-          }
-        };
+      const firstStage = firstStageLogsMap.get(batch.id);
+      const variety = firstStage?.metadata?.variety || null;
+      const holderInfo = usersMap.get(batch.current_holder_key) || { name: 'Desconhecido', role: 'unknown' };
+      
+      return { 
+        ...batch, 
+        variety,
+        users: {
+          name: holderInfo.name,
+          role: holderInfo.role
+        }
+      };
     });
 
     return res.status(200).json(processedBatches);
