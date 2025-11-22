@@ -14,19 +14,18 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, session } = useSupabaseAuth();
+  const { profile, session } = useSupabaseAuth(); // Corrigido: Usar 'profile' em vez de 'user'
 
-  // Safely access user.name and provide a fallback
-  const userName = user?.name || 'Usuário';
-  const userInitials = userName.split(' ').map(n => n[0]).join('');
-
-  // If there's no session, or user object is null, don't render the header content that depends on user data.
-  // The ProtectedRoute should handle redirection, but this adds an extra layer of safety.
-  if (!session || !user) {
+  // Se não houver sessão ou perfil, não renderizar o cabeçalho.
+  if (!session || !profile) {
     return null; 
   }
 
-  // Determine current section title based on route
+  // Usar profile.name e fornecer um fallback
+  const userName = profile.name || 'Usuário';
+  const userInitials = userName.split(' ').map(n => n[0]).join('');
+
+  // Determinar o título da seção com base na rota
   const getSectionTitle = (pathname: string) => {
     switch (pathname) {
       case '/dashboard':
@@ -52,8 +51,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
 
   const handleLogoClick = () => {
     if (location.pathname !== '/') {
-      // Navigate to appropriate home page based on role
-      if (user.role === 'brand_owner') {
+      // Navegar para a página inicial apropriada com base no papel do perfil
+      if (profile.role === 'brand_owner') {
         navigate('/dashboard');
       } else {
         navigate('/tasks');

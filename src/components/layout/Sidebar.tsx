@@ -12,10 +12,10 @@ import {
   ChevronRight,
   ClipboardList,
   Factory,
-  Leaf, // Added Leaf icon for Producer
-  Warehouse, // Added Warehouse icon
+  Leaf,
+  Warehouse,
 } from 'lucide-react';
-import { useSupabaseAuth } from '@/context/SupabaseAuthContext'; // Corrigido o import
+import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -24,9 +24,9 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  const { user, session } = useSupabaseAuth(); // Usando useSupabaseAuth e session
+  const { profile, session } = useSupabaseAuth(); // Corrigido: Usar 'profile' que contém o papel do usuário
 
-  if (!session || !user) { // Verificando session e user para renderizar a sidebar
+  if (!session || !profile) { // Verificar se o perfil existe
     return null;
   }
 
@@ -49,29 +49,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { label: 'Meu Perfil Corporativo', icon: Leaf, path: '/register-enterprise' },
   ];
 
-  const warehouseSpecificLinks = [ // New links for warehouse
+  const warehouseSpecificLinks = [
     { label: 'Minhas Tarefas', icon: ClipboardList, path: '/tasks' },
     { label: 'Meu Perfil Corporativo', icon: Warehouse, path: '/register-enterprise' },
   ];
 
   const settingsLink = { label: 'Configurações', icon: Settings, path: '/settings' };
 
-  let navigationLinks = [...commonLinks];
+  let specificLinks;
 
-  if (user.role === 'brand_owner') {
-    navigationLinks = [...brandOwnerSpecificLinks, ...navigationLinks];
-  } else if (user.role === 'logistics') {
-    navigationLinks = [...employeePartnerSpecificLinks, ...commonLinks];
-  } else if (user.role === 'producer') {
-    navigationLinks = [...producerSpecificLinks, ...commonLinks];
-  } else if (user.role === 'warehouse') { // Add warehouse specific links
-    navigationLinks = [...warehouseSpecificLinks, ...commonLinks];
-  } else {
-    // For other roles, show tasks and profile
-    navigationLinks = [...employeePartnerSpecificLinks, ...commonLinks];
+  // Lógica corrigida para determinar os links com base no papel do perfil
+  switch (profile.role) {
+    case 'brand_owner':
+      specificLinks = brandOwnerSpecificLinks;
+      break;
+    case 'producer':
+      specificLinks = producerSpecificLinks;
+      break;
+    case 'warehouse':
+      specificLinks = warehouseSpecificLinks;
+      break;
+    case 'logistics':
+    default: // Fallback para outros papéis de parceiros
+      specificLinks = employeePartnerSpecificLinks;
+      break;
   }
 
-  navigationLinks.push(settingsLink);
+  const navigationLinks = [...specificLinks, ...commonLinks, settingsLink];
 
   return (
     <aside
