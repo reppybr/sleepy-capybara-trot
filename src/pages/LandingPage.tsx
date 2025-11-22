@@ -1,13 +1,104 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, useScroll, useSpring, useTransform, useMotionValue, useVelocity } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Coffee, ArrowRight, ShieldCheck, Link as LinkIcon, Gem } from 'lucide-react';
+
+// Hook para Text Scramble
+const useScrambleText = (text, speed = 50, enabled = true) => {
+  const [displayText, setDisplayText] = useState(enabled ? '' : text);
+  
+  useEffect(() => {
+    if (!enabled) {
+      setDisplayText(text);
+      return;
+    }
+
+    const chars = '!@#$%^&*()_+-=[]{}|;:,.<>?~abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let iterations = 0;
+    const timeout = setTimeout(() => {
+      const interval = setInterval(() => {
+        setDisplayText(text
+          .split('')
+          .map((char, index) => {
+            if (index < iterations) {
+              return text[index];
+            }
+            return chars[Math.floor(Math.random() * chars.length)];
+          })
+          .join('')
+        );
+
+        if (iterations >= text.length) {
+          clearInterval(interval);
+        }
+        iterations += 1 / 3;
+      }, speed);
+
+      return () => clearInterval(interval);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [text, speed, enabled]);
+
+  return displayText;
+};
+
+// Hook para Botão Magnético
+const useMagneticButton = (strength = 0.5) => {
+  const ref = useRef(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = useCallback((e) => {
+    if (!ref.current) return;
+    
+    const rect = ref.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const distanceX = e.clientX - centerX;
+    const distanceY = e.clientY - centerY;
+    
+    const magnetX = distanceX * strength;
+    const magnetY = distanceY * strength;
+    
+    setPosition({ x: magnetX, y: magnetY });
+  }, [strength]);
+
+  const handleMouseLeave = useCallback(() => {
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  return {
+    ref,
+    style: { x: position.x, y: position.y },
+    onMouseMove: handleMouseMove,
+    onMouseLeave: handleMouseLeave
+  };
+};
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
+  const mainRef = useRef(null);
+
+  // Scroll Physics
+  const { scrollY } = useScroll();
+  const scrollVelocity = useVelocity(scrollY);
+  const smoothVelocity = useSpring(scrollVelocity, {
+    damping: 50,
+    stiffness: 400
+  });
+  const skewY = useTransform(smoothVelocity, [-100, 100], [-2, 2]);
+
+  // Text Scramble
+  const scrambledTitle1 = useScrambleText("Rastreabilidade");
+  const scrambledTitle2 = useScrambleText("Tátil.");
+  const scrambledSubtitle = useScrambleText("A Nova Era do Café");
+
+  // Magnetic Button
+  const magneticButton = useMagneticButton(0.3);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -27,14 +118,17 @@ const LandingPage = () => {
     navigate('/login');
   };
 
-  // Função para concatenar classes
   const cn = (...classes) => classes.filter(Boolean).join(' ');
 
   return (
-    <div 
+    <motion.div 
       ref={containerRef}
+      style={{ skewY }}
       className="relative min-h-screen w-full overflow-x-hidden bg-gray-950 text-white font-sans"
     >
+      {/* Liquid Metal Background */}
+      <LiquidMetalBackground />
+
       {/* Background Effects Premium */}
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:50px_50px]" />
       <div className="absolute left-1/2 top-0 -z-10 -translate-x-1/2">
@@ -75,7 +169,7 @@ const LandingPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow relative z-10">
+      <main ref={mainRef} className="flex-grow relative z-10">
         {/* Hero Section */}
         <section className="container mx-auto flex min-h-[calc(100vh-5rem)] items-center px-4">
           <div className="max-w-3xl">
@@ -85,7 +179,7 @@ const LandingPage = () => {
               transition={{ duration: 0.5 }}
               className="mb-4 font-mono text-sm uppercase tracking-widest text-amber-400/80"
             >
-              A Nova Era do Café
+              {scrambledSubtitle}
             </motion.p>
             
             <motion.h1
@@ -94,9 +188,9 @@ const LandingPage = () => {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="font-serif text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-slate-100 to-slate-400 sm:text-7xl lg:text-8xl"
             >
-              Rastreabilidade
+              {scrambledTitle1}
               <span className="block bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent">
-                Tátil.
+                {scrambledTitle2}
               </span>
             </motion.h1>
 
@@ -116,16 +210,20 @@ const LandingPage = () => {
               transition={{ duration: 0.5, delay: 0.6 }}
               className="mt-10"
             >
-              <button 
+              <motion.button 
+                ref={magneticButton.ref}
+                style={magneticButton.style}
+                onMouseMove={magneticButton.onMouseMove}
+                onMouseLeave={magneticButton.onMouseLeave}
                 onClick={handleGetStarted}
-                className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-amber-500/20 transition-all hover:shadow-amber-500/40"
+                className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-amber-500/20 transition-all hover:shadow-amber-500/40 cursor-magnetic"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-700 opacity-0 transition-opacity group-hover:opacity-100" />
                 <span className="relative flex items-center space-x-2">
                   <span>Começar Agora</span>
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </span>
-              </button>
+              </motion.button>
             </motion.div>
           </div>
         </section>
@@ -139,7 +237,7 @@ const LandingPage = () => {
               transition={{ duration: 0.6 }}
               className="font-serif text-4xl font-bold tracking-tight text-slate-100 sm:text-5xl"
             >
-              Uma Plataforma, Infinitas Garantias
+              {useScrambleText("Uma Plataforma, Infinitas Garantias")}
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -190,6 +288,32 @@ const LandingPage = () => {
             />
           </div>
         </section>
+
+        {/* Image Showcase Section with Chromatic Aberration */}
+        <section className="container mx-auto px-4 py-24">
+          <div className="max-w-4xl mx-auto">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              className="font-serif text-4xl font-bold text-center text-slate-100 mb-16"
+            >
+              {useScrambleText("Tecnologia que Transforma")}
+            </motion.h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <ChromaticImage 
+                src="/api/placeholder/600/400"
+                alt="Blockchain Technology"
+                className="rounded-2xl"
+              />
+              <ChromaticImage 
+                src="/api/placeholder/600/400"
+                alt="Coffee Production"
+                className="rounded-2xl"
+              />
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
@@ -216,7 +340,65 @@ const LandingPage = () => {
         .animate-ping-slow {
           animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite;
         }
+        .cursor-magnetic {
+          cursor: none;
+        }
+        .cursor-magnetic:hover {
+          cursor: pointer;
+        }
       `}</style>
+    </motion.div>
+  );
+};
+
+// Componente Liquid Metal Background
+const LiquidMetalBackground = () => {
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden opacity-20">
+      {/* Blob 1 */}
+      <motion.div
+        animate={{
+          x: [0, 100, 0],
+          y: [0, -50, 0],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          repeatType: "reverse",
+        }}
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-amber-400/20 to-amber-600/20 rounded-full blur-3xl"
+      />
+      
+      {/* Blob 2 */}
+      <motion.div
+        animate={{
+          x: [0, -80, 0],
+          y: [0, 60, 0],
+          scale: [1, 1.2, 1],
+        }}
+        transition={{
+          duration: 25,
+          repeat: Infinity,
+          repeatType: "reverse",
+        }}
+        className="absolute top-3/4 right-1/4 w-80 h-80 bg-gradient-to-r from-amber-300/15 to-amber-500/15 rounded-full blur-3xl"
+      />
+      
+      {/* Blob 3 */}
+      <motion.div
+        animate={{
+          x: [0, 120, 0],
+          y: [0, 30, 0],
+          scale: [1, 0.9, 1],
+        }}
+        transition={{
+          duration: 30,
+          repeat: Infinity,
+          repeatType: "reverse",
+        }}
+        className="absolute bottom-1/4 left-1/2 w-64 h-64 bg-gradient-to-r from-amber-200/10 to-amber-400/10 rounded-full blur-3xl"
+      />
     </div>
   );
 };
@@ -285,6 +467,59 @@ const FeatureCard = ({
         </p>
       </div>
     </motion.div>
+  );
+};
+
+// Componente Chromatic Aberration
+const ChromaticImage = ({ src, alt, className }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div 
+      className={`relative overflow-hidden ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Red Channel */}
+      <motion.div
+        animate={{ x: isHovered ? -2 : 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="absolute inset-0 z-10 mix-blend-screen opacity-80"
+        style={{
+          backgroundImage: `url(${src})`,
+          filter: 'brightness(1.2) contrast(1.1)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      
+      {/* Green Channel - Base */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: `url(${src})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      
+      {/* Blue Channel */}
+      <motion.div
+        animate={{ x: isHovered ? 2 : 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="absolute inset-0 z-10 mix-blend-overlay opacity-80"
+        style={{
+          backgroundImage: `url(${src})`,
+          filter: 'brightness(0.9) contrast(1.1)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+      
+      <div className="relative z-20 bg-transparent w-full h-full flex items-center justify-center">
+        <span className="text-transparent">{alt}</span>
+      </div>
+    </div>
   );
 };
 
