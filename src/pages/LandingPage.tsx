@@ -1,126 +1,291 @@
-import React from 'react';
+'use client';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Coffee, ArrowRight, ShieldCheck, Link as LinkIcon, Gem } from 'lucide-react';
-import Button from '@/components/common/Button';
-import { MadeWithDyad } from '@/components/made-with-dyad';
-import { cn } from '@/lib/utils';
 
-const LandingPage: React.FC = () => {
+const LandingPage = () => {
   const navigate = useNavigate();
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      setMousePosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const handleGetStarted = () => {
     navigate('/login');
   };
 
+  // Função para concatenar classes
+  const cn = (...classes) => classes.filter(Boolean).join(' ');
+
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-gray-950 text-white font-sans">
-      {/* Background Effects */}
+    <div 
+      ref={containerRef}
+      className="relative min-h-screen w-full overflow-x-hidden bg-gray-950 text-white font-sans"
+    >
+      {/* Background Effects Premium */}
+      <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:50px_50px]" />
       <div className="absolute left-1/2 top-0 -z-10 -translate-x-1/2">
         <div className="h-[44rem] w-[90rem] bg-[radial-gradient(50%_50%_at_50%_50%,#785a28_0%,rgba(120,90,40,0)_100%)] opacity-15" />
       </div>
       <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.7%22%20numOctaves%3D%2210%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%20opacity%3D%220.03%22%2F%3E%3C%2Fsvg%3E')]"></div>
 
+      {/* Spotlight Effect Dinâmico */}
+      <div
+        className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(120, 90, 40, 0.15), transparent 80%)`,
+        }}
+      />
+
+      {/* Moving Borders Background */}
+      <div className="absolute inset-0 overflow-hidden opacity-20">
+        <div className="absolute -inset-[100%] rotate-45 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(120,90,40,0.2)_0%,rgba(255,255,255,0.5)_25%,rgba(120,90,40,0.2)_50%,rgba(255,255,255,0.5)_75%,rgba(120,90,40,0.2)_100%)] animate-[shimmer_4s_linear_infinite]" />
+      </div>
+
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-gray-950/50 backdrop-blur-lg">
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-gray-950/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-20 items-center justify-between px-4">
           <div className="flex items-center space-x-3">
-            <Coffee className="h-8 w-8 text-amber-400" />
+            <div className="relative">
+              <Coffee className="h-8 w-8 text-amber-400" />
+              <div className="absolute inset-0 h-8 w-8 animate-ping-slow rounded-full bg-amber-400/20" />
+            </div>
             <span className="text-2xl font-semibold font-serif text-slate-100">CoffeLedger</span>
           </div>
-          <Button 
+          <button 
             onClick={() => navigate('/login')}
-            variant="secondary"
-            className="hidden sm:flex border-amber-400/50 text-amber-400 hover:bg-amber-400/10 hover:text-amber-300"
+            className="hidden sm:flex items-center px-6 py-2 rounded-lg border border-amber-400/50 text-amber-400 hover:bg-amber-400/10 hover:text-amber-300 transition-all duration-300 backdrop-blur-sm"
           >
             Entrar
-          </Button>
+          </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow">
+      <main className="flex-grow relative z-10">
         {/* Hero Section */}
         <section className="container mx-auto flex min-h-[calc(100vh-5rem)] items-center px-4">
           <div className="max-w-3xl">
-            <p className="mb-4 text-sm font-medium uppercase tracking-widest text-amber-400">A Nova Era do Café</p>
-            <h1 className="font-serif text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-slate-100 to-slate-400 sm:text-7xl lg:text-8xl">
-              Rastreabilidade Tátil.
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-slate-300">
-              Conecte, rastreie e certifique cada etapa da cadeia produtiva do café com a imutabilidade e transparência da tecnologia blockchain.
-            </p>
-            <div className="mt-10">
-              <Button 
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-4 font-mono text-sm uppercase tracking-widest text-amber-400/80"
+            >
+              A Nova Era do Café
+            </motion.p>
+            
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="font-serif text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-slate-100 to-slate-400 sm:text-7xl lg:text-8xl"
+            >
+              Rastreabilidade
+              <span className="block bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent">
+                Tátil.
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="mt-6 text-lg leading-8 text-slate-300/90"
+            >
+              Conecte, rastreie e certifique cada etapa da cadeia produtiva do café com a imutabilidade 
+              e transparência da tecnologia blockchain.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="mt-10"
+            >
+              <button 
                 onClick={handleGetStarted}
-                className="px-8 py-4 text-lg font-semibold flex items-center space-x-2 shadow-lg shadow-amber-500/20 transition-all hover:shadow-amber-500/40 bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700"
+                className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-amber-500/20 transition-all hover:shadow-amber-500/40"
               >
-                <span>Começar Agora</span>
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-700 opacity-0 transition-opacity group-hover:opacity-100" />
+                <span className="relative flex items-center space-x-2">
+                  <span>Começar Agora</span>
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </span>
+              </button>
+            </motion.div>
           </div>
         </section>
 
-        {/* Features Section */}
+        {/* Features Section - Bento Grid Premium */}
         <section className="container mx-auto px-4 py-24 sm:py-32">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-serif text-4xl font-bold tracking-tight text-slate-100 sm:text-5xl">Uma Plataforma, Infinitas Garantias</h2>
-            <p className="mt-4 text-lg text-slate-400">
+          <div className="mx-auto max-w-4xl text-center">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="font-serif text-4xl font-bold tracking-tight text-slate-100 sm:text-5xl"
+            >
+              Uma Plataforma, Infinitas Garantias
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mt-4 text-lg text-slate-400"
+            >
               Para uma cadeia de valor mais justa, transparente e valiosa.
-            </p>
+            </motion.p>
           </div>
-          <div className="mt-20 grid grid-cols-1 gap-8 md:grid-cols-3">
+
+          {/* Bento Grid */}
+          <div className="mt-20 grid grid-cols-1 gap-6 md:grid-cols-6 md:grid-rows-2 max-w-6xl mx-auto">
+            {/* Card Principal */}
             <FeatureCard
               icon={ShieldCheck}
               title="Transparência Imutável"
               description="Cada transação e etapa do processo é registrada de forma segura e permanente na blockchain, eliminando fraudes e garantindo a autenticidade."
-              className="md:mt-0"
+              className="md:col-span-3 md:row-span-2"
+              delay={0.1}
             />
+            
+            {/* Card Médio */}
             <FeatureCard
               icon={LinkIcon}
               title="Ecossistema Conectado"
               description="Integre produtores, transportadoras, armazéns e torrefadores em uma única plataforma, otimizando a comunicação e a eficiência operacional."
-              className="md:mt-16"
+              className="md:col-span-3"
+              delay={0.3}
             />
+            
+            {/* Card Pequeno 1 */}
             <FeatureCard
               icon={Gem}
-              title="Valor Agregado e Qualidade"
-              description="Certifique a origem, o processo e a qualidade do seu café, criando uma narrativa poderosa para o consumidor final e valorizando seu produto."
-              className="md:mt-32"
+              title="Valor Agregado"
+              description="Certifique a origem e qualidade do seu café, criando uma narrativa poderosa para o consumidor final."
+              className="md:col-span-2"
+              delay={0.5}
+            />
+            
+            {/* Card Pequeno 2 */}
+            <FeatureCard
+              icon={Coffee}
+              title="Origem Premium"
+              description="Rastreabilidade completa desde a plantação até a xícara, garantindo autenticidade e qualidade superior."
+              className="md:col-span-1"
+              delay={0.7}
             />
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-8">
+      <footer className="border-t border-white/10 py-8 relative z-10">
         <div className="container mx-auto px-4 text-center">
-          <MadeWithDyad />
+          <div className="flex items-center justify-center space-x-2 text-slate-400">
+            <span>Desenvolvido com</span>
+            <Coffee className="h-4 w-4 text-amber-400" />
+            <span>para a indústria do café</span>
+          </div>
         </div>
       </footer>
+
+      {/* Estilos CSS para animações customizadas */}
+      <style jsx>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%) rotate(45deg); }
+          100% { transform: translateX(100%) rotate(45deg); }
+        }
+        @keyframes border-beam {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-ping-slow {
+          animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+      `}</style>
     </div>
   );
 };
 
-interface FeatureCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  className?: string;
-}
+// Componente FeatureCard com efeitos premium
+const FeatureCard = ({ 
+  icon: Icon, 
+  title, 
+  description, 
+  className,
+  delay = 0 
+}) => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const cardRef = useRef(null);
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, className }) => (
-  <div className={cn(
-    "rounded-2xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl transition-all duration-300",
-    "hover:bg-white/10 hover:ring-2 hover:ring-amber-400/50 hover:shadow-2xl hover:shadow-amber-500/10",
-    className
-  )}>
-    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-amber-400/10 ring-1 ring-inset ring-amber-400/20">
-      <Icon className="h-7 w-7 text-amber-400" />
-    </div>
-    <h3 className="mt-6 font-serif text-xl font-semibold text-slate-100">{title}</h3>
-    <p className="mt-4 text-base text-slate-400">{description}</p>
-  </div>
-);
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+  return (
+    <motion.div
+      ref={cardRef}
+      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.6, delay }}
+      onMouseMove={handleMouseMove}
+      className={cn(
+        "group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl",
+        "transition-all duration-500 hover:bg-white/10 hover:shadow-2xl hover:shadow-amber-500/10",
+        "before:absolute before:inset-0 before:bg-gradient-to-br before:from-amber-400/10 before:via-transparent before:to-transparent before:opacity-0 before:transition-opacity before:duration-500",
+        "hover:before:opacity-100",
+        className
+      )}
+      style={{
+        backgroundImage: `
+          radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(120, 90, 40, 0.15) 0%, transparent 50%)
+        `,
+      }}
+    >
+      {/* Moving Border Effect */}
+      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-400/50 via-amber-200/50 to-amber-400/50 animate-border-beam" />
+        <div className="absolute inset-[1px] rounded-2xl bg-gray-950/95 backdrop-blur-xl" />
+      </div>
+
+      <div className="relative z-10">
+        <div className="relative inline-flex">
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-amber-400/10 ring-1 ring-inset ring-amber-400/20 backdrop-blur-sm">
+            <Icon className="h-7 w-7 text-amber-400" />
+          </div>
+          <div className="absolute inset-0 h-14 w-14 rounded-lg bg-amber-400/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        </div>
+        
+        <h3 className="mt-6 font-serif text-xl font-semibold text-slate-100 group-hover:text-amber-50 transition-colors duration-300">
+          {title}
+        </h3>
+        <p className="mt-4 text-base text-slate-400 group-hover:text-slate-300 transition-colors duration-300 leading-relaxed">
+          {description}
+        </p>
+      </div>
+    </motion.div>
+  );
+};
 
 export default LandingPage;
