@@ -196,30 +196,31 @@ export const getMyPartners = async (req: AuthenticatedRequest, res: Response) =>
   const { public_key: userPublicKey } = req.user!;
 
   try {
-    // Buscar todas as conexões onde o usuário é partner_a ou partner_b e o status é 'active'
-    const { data: connections, error } = await supabase
+    // Etapa 1: Buscar todas as conexões ativas do usuário
+    const { data: connections, error: connError } = await supabase
       .from('partner_connections')
-      .select(`
-        partner_a_key,
-        partner_b_key,
-        partner_a:users!partner_connections_partner_a_key_fkey(public_key, name, email, role),
-        partner_b:users!partner_connections_partner_b_key_fkey(public_key, name, email, role)
-      `)
+      .select('partner_a_key, partner_b_key')
       .or(`partner_a_key.eq.${userPublicKey},partner_b_key.eq.${userPublicKey}`)
       .eq('status', 'active');
 
-    if (error) {
-      throw error;
+    if (connError) throw connError;
+    if (!connections || connections.length === 0) {
+      return res.status(200).json([]);
     }
 
-    // Extrair os parceiros únicos
-    const partners = connections.map(conn => {
-      if (conn.partner_a_key === userPublicKey) {
-        return conn.partner_b;
-      } else {
-        return conn.partner_a;
-      }
-    }).filter(Boolean); // Remover nulos/undefined
+    // Etapa 2: Extrair as chaves públicas dos parceiros
+    const partnerKeys = connections.map(conn => 
+      conn.partner_a_key === userPublicKey ? conn.partner_b_key : conn.partner_a_key
+    );
+    const uniquePartnerKeys = [...new Set(partnerKeys)];
+
+    // Etapa 3: Buscar os perfis completos dos parceiros
+    const { data: partners, error: usersError } = await supabase
+      .from('users')
+      .select('public_key, name, email, role')
+      .in('public_key', uniquePartnerKeys);
+
+    if (usersError) throw usersError;
 
     return res.status(200).json(partners);
   } catch (error: any) {

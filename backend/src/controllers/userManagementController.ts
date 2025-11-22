@@ -1,8 +1,20 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase'; // Importa a instância do Supabase com Service Role Key
+import { PartnerRoleKey } from '../types/forms';
 
-export const assignUserRole = async (req: Request, res: Response) => {
-  const { identifier, method, role } = req.body; // 'identifier' pode ser email ou public_key, 'method' indica qual, 'role' é o papel a ser atribuído
+interface AuthenticatedRequest extends Request {
+  user?: {
+    auth_user_id: string;
+    public_key: string;
+    role: PartnerRoleKey;
+    email: string;
+    name: string;
+  };
+}
+
+export const assignUserRole = async (req: AuthenticatedRequest, res: Response) => {
+  const { identifier, method, role } = req.body;
+  const { public_key: brandOwnerPublicKey } = req.user!;
 
   if (!identifier || !method || !role) {
     return res.status(400).json({ error: 'Identifier, method, and role are required.' });
@@ -16,7 +28,7 @@ export const assignUserRole = async (req: Request, res: Response) => {
     if (method === 'email') {
       const { data, error } = await supabase
         .from('users')
-        .select('auth_user_id, email, public_key, name') // Select name and public_key too
+        .select('auth_user_id, email, public_key, name')
         .eq('email', identifier)
         .single();
       userToUpdate = data;
@@ -24,7 +36,7 @@ export const assignUserRole = async (req: Request, res: Response) => {
     } else if (method === 'publicKey') {
       const { data, error } = await supabase
         .from('users')
-        .select('auth_user_id, public_key, email, name') // Select name and email too
+        .select('auth_user_id, public_key, email, name')
         .eq('public_key', identifier)
         .single();
       userToUpdate = data;
@@ -33,7 +45,7 @@ export const assignUserRole = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid method. Must be "email" or "publicKey".' });
     }
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
+    if (fetchError && fetchError.code !== 'PGRST116') {
       throw fetchError;
     }
 
@@ -42,7 +54,6 @@ export const assignUserRole = async (req: Request, res: Response) => {
     }
 
     // 2. Update the user's role and set is_profile_complete to false
-    // This ensures they are prompted to complete their profile for the new role
     const { error: updateError } = await supabase
       .from('users')
       .update({ role: role, is_profile_complete: false })
@@ -52,11 +63,24 @@ export const assignUserRole = async (req: Request, res: Response) => {
       throw updateError;
     }
 
-    // Return the updated user data (or relevant parts)
+    // 3. Automatically create a connection between the Brand Owner and the new partner
+    const { error: connectionError } = await supabase
+      .from('partner_connections')
+      .insert({
+        partner_a_key: brandOwnerPublicKey,
+        partner_b_key: userToUpdate.public_key,
+        relationship_type: 'brand_partnership',
+        status: 'active',
+      });
+
+    if (connectionError && connectionError.code !== '23505') { // Ignore if connection already exists
+      throw connectionError;
+    }
+
     return res.status(200).json({ 
-      message: `User ${identifier} is now a ${role}!`,
+      message: `User ${identifier} is now a ${role} and connected to your network!`,
       user: {
-        id: userToUpdate.auth_user_id, // Use auth_user_id as a unique ID for frontend
+        id: userToUpdate.auth_user_id,
         name: userToUpdate.name,
         email: userToUpdate.email,
         public_key: userToUpdate.public_key,

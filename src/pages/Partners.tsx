@@ -72,13 +72,13 @@ const Partners: React.FC = () => {
   const assignRoleMutation = useMutation({
     mutationFn: assignUserRole,
     onSuccess: (data) => {
-      toast.success(`Parceiro "${data.user.name}" agora é um ${getRoleLabel(data.user.role as PartnerRole)}!`);
+      toast.success(`Parceiro "${data.user.name}" agora é um ${getRoleLabel(data.user.role as PartnerRole)} e foi adicionado à sua rede!`);
       queryClient.invalidateQueries({ queryKey: ['myPartners'] });
       setIsCreatePartnerModalOpen(false);
       setNewPartnerData({ identifier: '', identifierMethod: 'publicKey', role: '' as PartnerRole, name: '' });
     },
     onError: (error: Error) => {
-      toast.error(`Falha ao atribuir papel: ${error.message}`);
+      toast.error(`Falha ao adicionar parceiro: ${error.message}`);
     },
     onSettled: () => setIsSubmitting(false),
   });
@@ -173,10 +173,10 @@ const Partners: React.FC = () => {
               isMobile ? (
                 <section className="grid grid-cols-1 gap-6">
                   {partners.map((partner) => (
-                    <Card key={partner.id} className="p-6 flex flex-col items-center text-center space-y-4">
+                    <Card key={partner.public_key} className="p-6 flex flex-col items-center text-center space-y-4">
                       <Avatar className="h-16 w-16"><AvatarFallback className="bg-primary text-primary-foreground text-xl">{partner.name.split(' ').map((n) => n[0]).join('')}</AvatarFallback></Avatar>
                       <h3 className="text-xl font-semibold text-primary-foreground">{partner.name}</h3>
-                      <p className="text-muted-foreground">{getRoleLabel(partner.role)}</p>
+                      <p className="text-muted-foreground">{getRoleLabel(partner.role as PartnerRole)}</p>
                     </Card>
                   ))}
                 </section>
@@ -186,9 +186,9 @@ const Partners: React.FC = () => {
                     <TableHeader className="bg-slate-900/50"><TableRow><TableHead>Empresa</TableHead><TableHead>Papel</TableHead><TableHead>Email</TableHead><TableHead>Chave Pública</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {partners.map((partner) => (
-                        <TableRow key={partner.id} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
+                        <TableRow key={partner.public_key} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
                           <TableCell className="font-medium text-primary-foreground">{partner.name}</TableCell>
-                          <TableCell className="text-slate-400">{getRoleLabel(partner.role)}</TableCell>
+                          <TableCell className="text-slate-400">{getRoleLabel(partner.role as PartnerRole)}</TableCell>
                           <TableCell className="text-slate-400">{partner.email}</TableCell>
                           <TableCell className="font-mono text-slate-300">{partner.public_key}</TableCell>
                         </TableRow>
@@ -256,7 +256,7 @@ const Partners: React.FC = () => {
       )}
 
       {/* Modals */}
-      <Modal open={isCreatePartnerModalOpen} onOpenChange={setIsCreatePartnerModalOpen} title="Atribuir Papel a Parceiro" description="Atribua um papel a um usuário existente na plataforma.">
+      <Modal open={isCreatePartnerModalOpen} onOpenChange={setIsCreatePartnerModalOpen} title="Adicionar Parceiro à Rede" description="Atribua um papel a um usuário existente para adicioná-lo à sua rede de parceiros.">
         <form onSubmit={handleCreatePartner} className="grid gap-6 py-4">
           <Tabs defaultValue="publicKey" className="w-full" onValueChange={(v) => setNewPartnerData(p => ({...p, identifierMethod: v as 'publicKey' | 'email', identifier: ''}))}>
             <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="publicKey">Chave Pública</TabsTrigger><TabsTrigger value="email">Email</TabsTrigger></TabsList>
@@ -264,7 +264,7 @@ const Partners: React.FC = () => {
             <TabsContent value="email" className="mt-4"><Label htmlFor="identifier-email">Email</Label><Input id="identifier-email" type="email" value={newPartnerData.identifier} onChange={(e) => setNewPartnerData(p => ({...p, identifier: e.target.value}))} /></TabsContent>
           </Tabs>
           <div><Label htmlFor="role">Papel a Atribuir</Label><Select onValueChange={(v: PartnerRole) => setNewPartnerData(p => ({...p, role: v}))}><SelectTrigger><SelectValue placeholder="Selecione o Papel" /></SelectTrigger><SelectContent>{roles.filter(r => r.value !== 'brand_owner').map(role => <SelectItem key={role.value} value={role.value}>{role.label}</SelectItem>)}</SelectContent></Select></div>
-          <div className="flex justify-end mt-6"><Button type="submit" variant="primary" disabled={isSubmitting}>{isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Atribuindo...</> : 'Atribuir Papel'}</Button></div>
+          <div className="flex justify-end mt-6"><Button type="submit" variant="primary" disabled={isSubmitting}>{isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Adicionando...</> : 'Adicionar e Conectar'}</Button></div>
         </form>
       </Modal>
 
