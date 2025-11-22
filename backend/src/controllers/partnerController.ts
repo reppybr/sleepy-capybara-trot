@@ -90,8 +90,8 @@ export const getConnectionRequests = async (req: AuthenticatedRequest, res: Resp
         created_at,
         sender_public_key,
         recipient_public_key,
-        sender:users!partner_requests_sender_public_key_fkey(name, email, public_key, role),
-        recipient:users!partner_requests_recipient_public_key_fkey(name, email, public_key, role)
+        sender:users!sender_public_key(name, email, public_key, role),
+        recipient:users!recipient_public_key(name, email, public_key, role)
       `);
 
     if (type === 'incoming') {
