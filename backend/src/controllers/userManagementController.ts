@@ -14,7 +14,7 @@ interface AuthenticatedRequest extends Request {
 
 export const assignUserRole = async (req: AuthenticatedRequest, res: Response) => {
   const { identifier, method, role } = req.body;
-  const brandOwnerUser = req.user!;
+  const { public_key: brandOwnerPublicKey } = req.user!;
 
   if (!identifier || !method || !role) {
     return res.status(400).json({ error: 'Identifier, method, and role are required.' });
@@ -63,25 +63,11 @@ export const assignUserRole = async (req: AuthenticatedRequest, res: Response) =
       throw updateError;
     }
 
-    // 3. Ensure both Brand Owner and the new partner have profiles in partner_profiles
-    const profilesToUpsert = [
-      { public_key: brandOwnerUser.public_key, name: brandOwnerUser.name, role: brandOwnerUser.role },
-      { public_key: userToUpdate.public_key, name: userToUpdate.name, role: role }
-    ];
-
-    const { error: upsertError } = await supabase
-      .from('partner_profiles')
-      .upsert(profilesToUpsert, { onConflict: 'public_key' });
-
-    if (upsertError) {
-      throw upsertError;
-    }
-
-    // 4. Automatically create a connection between the Brand Owner and the new partner
+    // 3. Automatically create a connection between the Brand Owner and the new partner
     const { error: connectionError } = await supabase
       .from('partner_connections')
       .insert({
-        partner_a_key: brandOwnerUser.public_key,
+        partner_a_key: brandOwnerPublicKey,
         partner_b_key: userToUpdate.public_key,
         relationship_type: 'brand_partnership',
         status: 'active',
