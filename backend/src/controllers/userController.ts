@@ -38,14 +38,23 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
 };
 
 export const updateMyProfile = async (req: AuthenticatedRequest, res: Response) => {
-  const { public_key: userPublicKey } = req.user!; // Assumindo que o usuário está autenticado
-  const { name, email, role, profile_metadata } = req.body;
+  const { auth_user_id } = req.user!; // Usar auth_user_id para segurança
+  const { name, profile_metadata } = req.body;
 
   try {
+    // Apenas 'name' e 'profile_metadata' podem ser atualizados por esta rota.
+    const updateData: { name?: string; profile_metadata?: any } = {};
+    if (name) updateData.name = name;
+    if (profile_metadata) updateData.profile_metadata = profile_metadata;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No update data provided.' });
+    }
+
     const { data, error } = await supabase
       .from('users')
-      .update({ name, email, role, profile_metadata })
-      .eq('public_key', userPublicKey)
+      .update(updateData)
+      .eq('auth_user_id', auth_user_id)
       .select()
       .single();
 

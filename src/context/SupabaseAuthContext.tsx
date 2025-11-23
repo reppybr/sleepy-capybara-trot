@@ -22,6 +22,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -153,6 +154,7 @@ export const SupabaseAuthProvider: React.FC<{ children: ReactNode }> = ({ childr
     profile,
     loading,
     signOut,
+    setProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
