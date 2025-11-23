@@ -4,8 +4,8 @@ import { program, backendKeypair } from '../config/anchor';
 class SolanaService {
   /**
    * Creates a new batch on the Solana blockchain.
-   * The backend wallet funds the brand owner's account for rent if needed,
-   * and pays the transaction fee directly.
+   * The backend wallet now pays for the account rent and transaction fee directly.
+   * The brand owner's wallet is only required to sign to prove authorization.
    * @param batchKeypair - The new account for the batch.
    * @param brandOwnerKeypair - The keypair of the brand owner, who must sign.
    * @param id - The off-chain generated ID for the batch.
@@ -23,41 +23,44 @@ class SolanaService {
     initialHolderKey: PublicKey
   ): Promise<string> {
     const connection = program.provider.connection;
-    const rent = await connection.getMinimumBalanceForRentExemption(program.account.batch.size);
-    
-    const brandOwnerBalance = await connection.getBalance(brandOwnerKeypair.publicKey);
 
-    // If the brand owner can't afford the rent, the backend funds them.
-    if (brandOwnerBalance < rent) {
-      const amountToFund = rent - brandOwnerBalance + 5000; // Add a small buffer for tx fees
-      console.log(`Brand owner ${brandOwnerKeypair.publicKey.toBase58()} has insufficient balance for rent. Funding with ${amountToFund} lamports...`);
-      
-      const fundingTx = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: backendKeypair.publicKey,
-          toPubkey: brandOwnerKeypair.publicKey,
-          lamports: amountToFund,
-        })
-      );
-      
-      // The backend wallet pays for this funding transaction.
-      await sendAndConfirmTransaction(connection, fundingTx, [backendKeypair]);
-      console.log(`Successfully funded brand owner ${brandOwnerKeypair.publicKey.toBase58()}.`);
-    }
-
-    // Now, the brand owner has enough SOL to pay for the batch account's rent.
-    // The backend wallet (provider's wallet) will pay the transaction fee for this call.
-    const tx = await program.methods
+    // 1. Get the main instruction from Anchor
+    const createBatchIx = await program.methods
       .createBatch(id, producerName, brandId, initialHolderKey)
       .accounts({
         batch: batchKeypair.publicKey,
         brandOwner: brandOwnerKeypair.publicKey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([batchKeypair, brandOwnerKeypair])
-      .rpc();
+      .instruction();
+
+    // 2. Get the rent required for the new batch account
+    const rent = await connection.getMinimumBalanceForRentExemption(program.account.batch.size);
+
+    // 3. Create the instruction to create the account, with the BACKEND as the payer
+    const createAccountIx = SystemProgram.createAccount({
+      fromPubkey: backendKeypair.publicKey, // SERVER PAYS FOR RENT
+      newAccountPubkey: batchKeypair.publicKey,
+      lamports: rent,
+      space: program.account.batch.size,
+      programId: program.programId,
+    });
+
+    // 4. Build the transaction with both instructions
+    const transaction = new Transaction().add(createAccountIx, createBatchIx);
+
+    // 5. Send and confirm the transaction.
+    // Signers:
+    // - backendKeypair: Pays for rent and transaction fee.
+    // - batchKeypair: Authorizes the creation of its own account.
+    // - brandOwnerKeypair: Authorizes the action as required by the on-chain program.
+    const signature = await sendAndConfirmTransaction(connection, transaction, [
+      backendKeypair,
+      batchKeypair,
+      brandOwnerKeypair,
+    ]);
     
-    return tx;
+    return signature;
   }
 
   /**
