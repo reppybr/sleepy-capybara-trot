@@ -81,18 +81,10 @@ export const getConnectionRequests = async (req: AuthenticatedRequest, res: Resp
   const { type } = req.query; // 'incoming' ou 'sent'
 
   try {
+    // Etapa 1: Buscar as solicitações de parceria brutas
     let query = supabase
       .from('partner_requests')
-      .select(`
-        id,
-        message,
-        status,
-        created_at,
-        sender_public_key,
-        recipient_public_key,
-        sender:users!sender_public_key(name, email, public_key, role),
-        recipient:users!recipient_public_key(name, email, public_key, role)
-      `);
+      .select('id, message, status, created_at, sender_public_key, recipient_public_key');
 
     if (type === 'incoming') {
       query = query.eq('recipient_public_key', userPublicKey).eq('status', 'pending');
@@ -102,13 +94,45 @@ export const getConnectionRequests = async (req: AuthenticatedRequest, res: Resp
       return res.status(400).json({ error: 'Invalid request type. Must be "incoming" or "sent".' });
     }
 
-    const { data: requests, error } = await query;
+    const { data: requests, error: requestsError } = await query;
 
-    if (error) {
-      throw error;
+    if (requestsError) {
+      throw requestsError;
     }
 
-    return res.status(200).json(requests);
+    if (!requests || requests.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Etapa 2: Coletar todas as chaves públicas únicas
+    const publicKeys = new Set<string>();
+    requests.forEach(req => {
+      publicKeys.add(req.sender_public_key);
+      publicKeys.add(req.recipient_public_key);
+    });
+
+    // Etapa 3: Buscar todos os perfis de usuário correspondentes
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('name, email, public_key, role')
+      .in('public_key', Array.from(publicKeys));
+
+    if (usersError) {
+      throw usersError;
+    }
+
+    // Etapa 4: Criar um mapa para facilitar a busca
+    const usersMap = new Map(users.map(u => [u.public_key, u]));
+
+    // Etapa 5: Combinar os dados
+    const populatedRequests = requests.map(req => ({
+      ...req,
+      sender: usersMap.get(req.sender_public_key) || null,
+      recipient: usersMap.get(req.recipient_public_key) || null,
+    }));
+
+    return res.status(200).json(populatedRequests);
+
   } catch (error: any) {
     console.error('Error fetching connection requests:', error);
     return res.status(500).json({ error: 'Internal server error.', details: error.message });
