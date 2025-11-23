@@ -3,35 +3,9 @@ import { program, backendKeypair } from '../config/anchor';
 
 class SolanaService {
   /**
-   * Ensures an account has a minimum balance, funding it from the backend wallet if necessary.
-   * @param publicKey - The public key of the account to check.
-   * @param requiredLamports - The minimum number of lamports the account should have.
-   */
-  private async ensureAccountIsFunded(publicKey: PublicKey, requiredLamports: number): Promise<void> {
-    const connection = program.provider.connection;
-    const balance = await connection.getBalance(publicKey);
-
-    if (balance < requiredLamports) {
-      const amountToFund = requiredLamports - balance;
-      console.log(`Account ${publicKey.toBase58()} has insufficient balance (${balance} lamports). Funding with ${amountToFund} lamports...`);
-      
-      const fundingTx = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: backendKeypair.publicKey,
-          toPubkey: publicKey,
-          lamports: amountToFund,
-        })
-      );
-      
-      await sendAndConfirmTransaction(connection, fundingTx, [backendKeypair]);
-      console.log(`Successfully funded account ${publicKey.toBase58()}.`);
-    }
-  }
-
-  /**
    * Creates a new batch on the Solana blockchain.
-   * The brand owner's account is funded by the backend if it lacks SOL for rent.
-   * The transaction fee is paid by the backend wallet.
+   * The backend wallet funds the brand owner's account for rent if needed,
+   * and pays the transaction fee directly.
    * @param batchKeypair - The new account for the batch.
    * @param brandOwnerKeypair - The keypair of the brand owner, who must sign.
    * @param id - The off-chain generated ID for the batch.
@@ -51,10 +25,28 @@ class SolanaService {
     const connection = program.provider.connection;
     const rent = await connection.getMinimumBalanceForRentExemption(program.account.batch.size);
     
-    // The brand owner account needs to pay for the new batch account's rent.
-    // We ensure it has enough funds, plus a small buffer.
-    await this.ensureAccountIsFunded(brandOwnerKeypair.publicKey, rent + 10000);
+    const brandOwnerBalance = await connection.getBalance(brandOwnerKeypair.publicKey);
 
+    // If the brand owner can't afford the rent, the backend funds them.
+    if (brandOwnerBalance < rent) {
+      const amountToFund = rent - brandOwnerBalance + 5000; // Add a small buffer for tx fees
+      console.log(`Brand owner ${brandOwnerKeypair.publicKey.toBase58()} has insufficient balance for rent. Funding with ${amountToFund} lamports...`);
+      
+      const fundingTx = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: backendKeypair.publicKey,
+          toPubkey: brandOwnerKeypair.publicKey,
+          lamports: amountToFund,
+        })
+      );
+      
+      // The backend wallet pays for this funding transaction.
+      await sendAndConfirmTransaction(connection, fundingTx, [backendKeypair]);
+      console.log(`Successfully funded brand owner ${brandOwnerKeypair.publicKey.toBase58()}.`);
+    }
+
+    // Now, the brand owner has enough SOL to pay for the batch account's rent.
+    // The backend wallet (provider's wallet) will pay the transaction fee for this call.
     const tx = await program.methods
       .createBatch(id, producerName, brandId, initialHolderKey)
       .accounts({
@@ -85,9 +77,7 @@ class SolanaService {
     ipfsCid: string,
     partnerType: string
   ): Promise<string> {
-    // Ensure the signer account is not empty to avoid potential RPC issues.
-    await this.ensureAccountIsFunded(currentHolderKeypair.publicKey, 10000);
-
+    // No rent needed, backend wallet pays the small transaction fee.
     const tx = await program.methods
       .addStage(stageName, ipfsCid, partnerType)
       .accounts({
@@ -113,9 +103,7 @@ class SolanaService {
     currentHolderKeypair: Keypair,
     nextHolderKey: PublicKey
   ): Promise<string> {
-    // Ensure the signer account is not empty.
-    await this.ensureAccountIsFunded(currentHolderKeypair.publicKey, 10000);
-
+    // No rent needed, backend wallet pays the small transaction fee.
     const tx = await program.methods
       .transferCustody(nextHolderKey)
       .accounts({
@@ -139,9 +127,7 @@ class SolanaService {
     batch: PublicKey,
     brandOwnerKeypair: Keypair
   ): Promise<string> {
-    // Ensure the signer account is not empty.
-    await this.ensureAccountIsFunded(brandOwnerKeypair.publicKey, 10000);
-
+    // No rent needed, backend wallet pays the small transaction fee.
     const tx = await program.methods
       .finalizeBatch()
       .accounts({
